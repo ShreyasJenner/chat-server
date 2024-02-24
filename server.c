@@ -13,7 +13,7 @@ int main() {
     
 
     /* Client data */
-    get_host_data(&client,"localhost","4321");
+    //get_host_data(&client,"localhost","4321");
     /* Client data */
 
     // Print IP address 
@@ -24,11 +24,11 @@ int main() {
     sockfd = create_socket(server);
     while(1) {
         recv_msg(server, sockfd);
-        send_msg(client);
+        //send_msg(client);
     }
 
     close(sockfd);
     freeaddrinfo(server);
-    freeaddrinfo(client);
+    //freeaddrinfo(client);
     return 0;
 }

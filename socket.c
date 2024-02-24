@@ -117,11 +117,11 @@ void recv_msg(struct addrinfo *server, int sockfd) {
     msg[strlen(msg)-1] = '\0';
     printf("[%d]%s\n",bytes,msg);
 
-    /* Client closed connection */
+    /* Client closed connection 
     if(!strcmp(msg,"stop")) {
         exit(0);
     }
-    /* Client closed connection */
+    Client closed connection */
 
     /* Clear Buffer */
     memset(msg, 0, MSG_SIZE);
@@ -153,6 +153,12 @@ void send_msg(struct addrinfo *server) {
     bytes_sent = send(sockfd, msg, strlen(msg), 0);
     error_handle(bytes_sent, "Sending message");
     printf("Bytes sent:%d\n",bytes_sent);
+
+    if(!strcmp(msg,"SEND\n")) {
+        printf("Enter File Name:\n");
+        /* Call function that gets file name and sends it */
+    }
+
     /* Send Message */
 
     close(sockfd);

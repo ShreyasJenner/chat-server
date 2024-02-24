@@ -12,22 +12,22 @@ int main() {
     /* Servers data */
 
     /* Client data */
-    get_host_data(&client, "localhost", "4321");
+    //get_host_data(&client, "localhost", "4321");
     /* Client data */
 
     // Print Ip address
     printf("Client Starting\n");
-    print_ip(client);
+    //print_ip(client);
 
 
-    sockfd = create_socket(client);
+    //sockfd = create_socket(client);
     while(1) {
         send_msg(server); 
-        recv_msg(client, sockfd);
+        //recv_msg(client, sockfd);
     }
 
     close(sockfd);
-    freeaddrinfo(client);
+    //freeaddrinfo(client);
     freeaddrinfo(server);
 
     return 0;
