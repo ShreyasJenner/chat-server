@@ -1,129 +1,34 @@
 /* Server Program */
 
 #include "header.h"
-
-void error_handle(int code, char *str) {
-    if(code<0) {
-        perror(str);
-        exit(1);
-    }
-}
-
-void print_ip(struct addrinfo *server) {
-    struct addrinfo *p;
-    struct sockaddr_in *ipv4;
-    struct sockaddr_in6 *ipv6;
-
-    void *addr;
-    char *ipver;
-
-    char ipstr[INET6_ADDRSTRLEN];
-    for(p=server; p != NULL; p = p->ai_next) {
-        if(p->ai_family == AF_INET) {
-            ipv4 = (struct sockaddr_in *)p->ai_addr;
-            addr = &(ipv4->sin_addr);
-            ipver = "IPv4";
-        } else {
-            ipv6 = (struct sockaddr_in6 *)p->ai_addr;
-            addr = &(ipv6->sin6_addr);
-            ipver = "IPv6";
-        }
-
-        inet_ntop(p->ai_family, addr, ipstr, sizeof(ipstr));
-        
-        printf("%s %s:%s\n",ipver,ipstr,PORT);
-    }
-}
-
-void recv_msg(struct addrinfo *server, int sockfd) {
-    struct sockaddr_storage conn;
-    int bytes, conn_size, new_fd;
-
-    char msg[MSG_SIZE];
-
-    /* Accept Connection */
-    conn_size = sizeof(conn);
-    new_fd = accept(sockfd, (struct sockaddr *)&conn, &(conn_size));
-    error_handle(new_fd, "Accepting Connection");
-    /* Accept Connection */
-
-    /* Receive Message */
-    bytes = recv(new_fd, msg, sizeof(msg), 0);
-    error_handle(bytes, "Receiving Data");
-    close(new_fd);
-    /* Receive Message */
-
-
-    //printf("%sBytes Received:%d\n",msg,bytes);
-    msg[strlen(msg)-1] = '\0';
-    printf("%s\n",msg);
-
-    /* Client closed connection */
-    if(!strcmp(msg,"stop")) {
-        exit(0);
-    }
-    /* Client closed connection */
-
-    /* Clear Buffer */
-    memset(msg, 0, MSG_SIZE);
-    /* Clear Buffer */
-}
-
-int create_socket(struct addrinfo *server) {
-    int sockfd, ret_code, yes;
-
-    yes = 1;
-
-    /* Create Socket */
-    sockfd = socket(server->ai_family, server->ai_socktype, server->ai_protocol);
-    error_handle(sockfd, "Creating Socket");
-    /* Create Socket */
-
-    /* Set Socket Options */
-    ret_code = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
-    error_handle(ret_code, "Set sock opt");
-    /* Set Socket Options */
-
-    /* Bind Socket */
-    ret_code = bind(sockfd, server->ai_addr, server->ai_addrlen);
-    error_handle(ret_code, "Binding socket");
-    /* Bind Socket */
-
-    /* Listen */
-    listen(sockfd,1); //no of connection allowed passed as 2nd arg
-    
-    return sockfd;
-}
+#include "socket.h"
 
 int main() {
-    struct addrinfo *server, test;
-    struct sockaddr_storage conn; 
-    int ret_code, sockfd, yes, conn_size, new_fd, bytes;
+    struct addrinfo *server, *client;
+    int sockfd;
 
-    char msg[100];
+    /* Servers data */
+    get_host_data(&server,"localhost","1234");
+    /* Servers data */
+    
 
-    /* Initialize variables */
-    ret_code = 1;
+    /* Client data */
+    get_host_data(&client,"localhost","4321");
+    /* Client data */
 
-    /* Get HOST data and store in struct */
-    memset(&test, 0, sizeof(test));
-    test.ai_family = AF_INET;
-    test.ai_socktype = SOCK_STREAM;
-    test.ai_flags = AI_PASSIVE;
-
-    ret_code = getaddrinfo(HOST, PORT, &test, &server);
-    error_handle(ret_code,"get address");
-   
     // Print IP address 
+    printf("Server Starting\n");
     print_ip(server);
 
    
     sockfd = create_socket(server);
     while(1) {
         recv_msg(server, sockfd);
+        send_msg(client);
     }
 
     close(sockfd);
     freeaddrinfo(server);
+    freeaddrinfo(client);
     return 0;
 }
