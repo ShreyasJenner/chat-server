@@ -12,5 +12,6 @@
 
 #define HOST "localhost"
 #define PORT "1234"
+#define MSG_SIZE 100
 
 #endif

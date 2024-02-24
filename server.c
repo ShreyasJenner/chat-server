@@ -35,6 +35,66 @@ void print_ip(struct addrinfo *server) {
     }
 }
 
+void recv_msg(struct addrinfo *server, int sockfd) {
+    struct sockaddr_storage conn;
+    int bytes, conn_size, new_fd;
+
+    char msg[MSG_SIZE];
+
+    /* Accept Connection */
+    conn_size = sizeof(conn);
+    new_fd = accept(sockfd, (struct sockaddr *)&conn, &(conn_size));
+    error_handle(new_fd, "Accepting Connection");
+    /* Accept Connection */
+
+    /* Receive Message */
+    bytes = recv(new_fd, msg, sizeof(msg), 0);
+    error_handle(bytes, "Receiving Data");
+    close(new_fd);
+    /* Receive Message */
+
+
+    //printf("%sBytes Received:%d\n",msg,bytes);
+    msg[strlen(msg)-1] = '\0';
+    printf("%s\n",msg);
+
+    /* Client closed connection */
+    if(!strcmp(msg,"stop")) {
+        exit(0);
+    }
+    /* Client closed connection */
+
+    /* Clear Buffer */
+    memset(msg, 0, MSG_SIZE);
+    /* Clear Buffer */
+}
+
+int create_socket(struct addrinfo *server) {
+    int sockfd, ret_code, yes;
+
+    yes = 1;
+
+    /* Create Socket */
+    sockfd = socket(server->ai_family, server->ai_socktype, server->ai_protocol);
+    error_handle(sockfd, "Creating Socket");
+    /* Create Socket */
+
+    /* Set Socket Options */
+    ret_code = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+    error_handle(ret_code, "Set sock opt");
+    /* Set Socket Options */
+
+    /* Bind Socket */
+    ret_code = bind(sockfd, server->ai_addr, server->ai_addrlen);
+    error_handle(ret_code, "Binding socket");
+    /* Bind Socket */
+
+    /* Listen */
+    listen(sockfd,1); //no of connection allowed passed as 2nd arg
+    
+    return sockfd;
+}
+
 int main() {
     struct addrinfo *server, test;
     struct sockaddr_storage conn; 
@@ -57,51 +117,12 @@ int main() {
     // Print IP address 
     print_ip(server);
 
-    
-    /* Create Socket */
-    sockfd = socket(server->ai_family, server->ai_socktype, server->ai_protocol);
-    error_handle(sockfd,"Creating Socket");
-
-
-    /* Set Socket Options */
-    ret_code = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,sizeof(yes));
-    error_handle(ret_code, "Set sock opt");
-
-
-    /* Bind Socket */
-    ret_code = bind(sockfd, server->ai_addr, server->ai_addrlen);
-    error_handle(ret_code, "Binding socket");
-
-    
-    /* Listen */
-    listen(sockfd, 1); //no of connections allowed is 2nd arg
-    
-
-    /* Accept Connection */
-    conn_size = sizeof(conn);
-    new_fd = accept(sockfd, (struct sockaddr *)&conn, &(conn_size));
-    error_handle(ret_code,"Accepting Connection");
-    
-
-    /* Send Message
-    strcpy(msg,"Hello from socket server");
-
-    bytes = send(new_fd, msg, strlen(msg), 0);
-    error_handle(bytes_sent, "Sending Data");
-    printf("Bytes Sent:%d\n",bytes_sent);
-    Send Message */
-
-
-    /* Receive Message */
-    while((bytes = recv(new_fd, msg, sizeof(msg), 0))!=0) {
-        close(new_fd);
-        error_handle(bytes,"Receiving Data");
-        printf("%s\nBytes Received:%d\n",msg,bytes);
-        new_fd = accept(sockfd, (struct sockaddr *)&conn, &(conn_size));
-        error_handle(ret_code,"Accepting Connection");
+   
+    sockfd = create_socket(server);
+    while(1) {
+        recv_msg(server, sockfd);
     }
 
-    close(new_fd);
     close(sockfd);
     freeaddrinfo(server);
     return 0;

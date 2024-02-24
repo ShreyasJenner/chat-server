@@ -9,6 +9,41 @@ void error_handle(int code, char *str) {
     }
 }
 
+void send_msg(struct addrinfo *server) {
+    int sockfd, ret_code, bytes_sent;
+    char msg[MSG_SIZE];
+
+    /* Create Socket */
+    sockfd = socket(server->ai_family, server->ai_socktype, server->ai_protocol);
+    error_handle(sockfd, "Creating Socket");
+    /* Create Socket */
+
+    /* Connect Socket */
+    ret_code = connect(sockfd, server->ai_addr, server->ai_addrlen);
+    error_handle(ret_code, "connecting to socket");
+    /* Connect Socket */
+
+    /* Clear Buffer */
+    memset(msg, 0, MSG_SIZE);
+    /* Clear Buffer */
+
+    /* Send Message */
+    fgets(msg,MSG_SIZE,stdin);
+    bytes_sent = send(sockfd, msg, strlen(msg), 0);
+    error_handle(bytes_sent, "Sending message");
+    printf("Bytes sent:%d\n",bytes_sent);
+    /* Send Message */
+
+    close(sockfd);
+
+    /* Client wants to close */
+    msg[strlen(msg)-1] = '\0';
+    if(!strcmp(msg,"stop")) {
+        exit(0);
+    }
+    /* Client wants to close */
+}
+
 void print_ip(struct addrinfo *server) {
     struct addrinfo *p;
     struct sockaddr_in *ipv4;
@@ -53,26 +88,11 @@ int main() {
 
     ret_code = getaddrinfo(HOST, PORT, &test, &server);
     error_handle(ret_code,"get address");
-   
-    
-    /* Create Socket */
-    sockfd = socket(server->ai_family, server->ai_socktype, server->ai_protocol);
-    error_handle(sockfd,"Creating Socket");
 
-    
-    /* Connect Socket */
-    ret_code = connect(sockfd, server->ai_addr, server->ai_addrlen);
-    error_handle(ret_code, "connecting to socket");
+    while(1) {
+        send_msg(server); 
+    }
 
-
-    /* Send Message */
-    scanf("%[^\n]", msg);
-    bytes = send(sockfd, msg, strlen(msg), 0);
-    error_handle(bytes, "Sending Data");
-    printf("Bytes Sent:%d\n",bytes);
-    /* Send Message */
-
-    close(sockfd);
     freeaddrinfo(server);
 
     return 0;
