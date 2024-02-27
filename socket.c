@@ -110,17 +110,20 @@ void recv_msg(struct addrinfo *server, int sockfd) {
     error_handle(bytes, "Receiving Data");
     close(new_fd);
     /* Receive Message */
-
+    
+    if(bytes==0)
+        exit(1);
 
     //printf("%sBytes Received:%d\n",msg,bytes);
     msg[strlen(msg)-1] = '\0';
-    printf("[%d]%s\n",bytes,msg);
+    //printf("[%d]%s\n",bytes,msg);
+    printf("%s\n",msg);
 
-    /* Client closed connection 
-    if(!strcmp(msg,"stop")) {
+    /* Client closed connection */
+    if(!strcmp(msg,"Stop")) {
         exit(0);
     }
-    Client closed connection */
+    /* Client closed connection */
 
     /* Clear Buffer */
     memset(msg, 0, MSG_SIZE);
@@ -129,9 +132,9 @@ void recv_msg(struct addrinfo *server, int sockfd) {
 
 
 /* Function to send messages */
-void send_msg(struct addrinfo *server) {
-    int sockfd, ret_code, bytes_sent;
-    char msg[MSG_SIZE];
+void send_msg(struct addrinfo *server, char *msg) {
+    int sockfd, ret_code, bytes_sent, i;
+    char buffer[MSG_SIZE], path[100], file[100];
 
     /* Create Socket */
     sockfd = socket(server->ai_family, server->ai_socktype, server->ai_protocol);
@@ -143,28 +146,27 @@ void send_msg(struct addrinfo *server) {
     error_handle(ret_code, "connecting to socket");
     /* Connect Socket */
 
-    /* Clear Buffer */
-    memset(msg, 0, MSG_SIZE);
-    /* Clear Buffer */
 
     /* Send Message */
-    fgets(msg,MSG_SIZE,stdin);
+    //fgets(msg,MSG_SIZE,stdin);
     bytes_sent = send(sockfd, msg, strlen(msg), 0);
     error_handle(bytes_sent, "Sending message");
     printf("Bytes sent:%d\n",bytes_sent);
 
-    if(!strcmp(msg,"SEND\n")) {
-        printf("Enter File Name:\n");
-        /* Call function that gets file name and sends it */
-    }
+    
 
     /* Send Message */
 
     close(sockfd);
 
+    /* Bytes sent are 0 */
+    if(bytes_sent==0)
+        exit(1);
+        //strcpy(msg,"Stop");
+
     /* Client wants to close */
     msg[strlen(msg)-1] = '\0';
-    if(!strcmp(msg,"stop")) {
+    if(!strcmp(msg,"stop") || !strcmp(msg,"Stop")) {
         exit(0);
     }
     /* Client wants to close */

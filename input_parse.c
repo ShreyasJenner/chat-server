@@ -1,7 +1,6 @@
 #include "input_parse.h"
 
-/* 
- * program takes 3 character arrays as argument 
+/* program takes 3 character arrays as argument 
  * takes input as path of file
  * checks for errors
  * parses its directory path relative to current directory
@@ -56,4 +55,6 @@ int file_name_parse(char *input, char *path, char *file_name) {
         i++;
     }
     file_name[j] = '\0';
+
+    return 0;
 }

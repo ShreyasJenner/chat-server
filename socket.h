@@ -2,6 +2,7 @@
 #define SOCKET_H
 
 #include "header.h"
+#include "input_parse.h"
 
 void error_handle(int code, char *str);
 
@@ -13,5 +14,5 @@ int create_socket(struct addrinfo *server);
 
 void recv_msg(struct addrinfo *server, int sockfd);
 
-void send_msg(struct addrinfo *server);
+void send_msg(struct addrinfo *server, char *msg);
 #endif

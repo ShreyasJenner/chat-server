@@ -6,6 +6,7 @@
 int main() {
     struct addrinfo *server, *client;
     int sockfd;
+    char msg[MSG_SIZE], path[MSG_SIZE], file[MSG_SIZE];
 
     /* Servers data */
     get_host_data(&server,"localhost","1234");
@@ -21,9 +22,17 @@ int main() {
 
 
     //sockfd = create_socket(client);
+    
+    memset(msg,0,MSG_SIZE);
+    gethostname(msg, MSG_SIZE);
+    send_msg(server, msg);
     while(1) {
-        send_msg(server); 
-        //recv_msg(client, sockfd);
+        /* Clear Buffer */
+        memset(msg, 0, MSG_SIZE);
+        /* Clear Buffer */
+        
+        fgets(msg, MSG_SIZE, stdin);
+        send_msg(server,msg); 
     }
 
     close(sockfd);
