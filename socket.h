@@ -2,7 +2,6 @@
 #define SOCKET_H
 
 #include "header.h"
-#include "input_parse.h"
 
 void error_handle(int code, char *str);
 
