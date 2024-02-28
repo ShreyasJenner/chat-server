@@ -9,7 +9,7 @@ int main() {
     char msg[MSG_SIZE], path[MSG_SIZE], file[MSG_SIZE];
 
     /* Servers data */
-    get_host_data(&server,"localhost","1234");
+    get_host_data(&server,"192.168.225.102","1234");
     /* Servers data */
 
     /* Client data */
