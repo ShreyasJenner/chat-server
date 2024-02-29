@@ -6,16 +6,15 @@
 
 int main() {
     /* variables */    
-    int fd;                                         /* file descriptor */
-    int bytes_read;                                 /* store bytes read */
-    int i, j;                                       /* Iterators */
-    int flag;                                       /* Flag */
-    char buff[BUF_SIZE];                            /* buffer */
-    char peer_ip[PEER_NO][IP_WIDTH];                /* store peer ip addresses */
-    char peer_port[PEER_NO][PORT_WIDTH];            /* store 4 digit peer ports */
+    int fd;                                                     /* file descriptor */
+    int bytes_read;                                             /* store bytes read */
+    int i, j;                                                   /* Iterators */
+    int flag;                                                   /* Flag */
+    char buff[BUF_SIZE];                                        /* buffer */
+    char peer_ip[PEER_NO][IP_WIDTH];                            /* store peer ip addresses */
+    char peer_port[PEER_NO][PORT_WIDTH];                        /* store 4 digit peer ports */
     
-    struct addrinfo *peers[PEER_NO];                              /* array of struct addrinfo */
-    struct addrinfo *ad_it;                             /* iterator through addrinfo structure */
+    struct addrinfo *peers[PEER_NO];                            /* array of struct addrinfo */
 
 
     /* Initialize variables */
@@ -45,7 +44,7 @@ int main() {
     display_peer_info(peers); 
      
 
-    /* Close file descriptors */
+    /* Free Memory and Close file descriptors */
     for(i=0;i<2;i++) {
         freeaddrinfo(peers[i]);
     }
