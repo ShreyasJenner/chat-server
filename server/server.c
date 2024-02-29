@@ -2,6 +2,7 @@
 #include "header.h"
 #include "read_peer_list.h"
 #include "get_address_info.h"
+#include "display_peer_info.h"
 
 int main() {
     /* variables */    
@@ -19,7 +20,9 @@ int main() {
 
     /* Initialize variables */
     bytes_read = -1;
-
+    // make all pointers point to NULL
+    for(i=0;i<PEER_NO;i++)
+        peers[i] = NULL;
 
 
     /* Open peer list file */
@@ -39,28 +42,7 @@ int main() {
     
 
     /* Display peer information */
-    char ipstr[100];
-    for(ad_it = peers[0]; ad_it != NULL; ad_it = ad_it->ai_next) {
-        if(ad_it->ai_family == AF_INET) {
-            struct sockaddr_in *ipv4 = (struct sockaddr_in *)ad_it->ai_addr;
-            struct in_addr *addr = &(ipv4->sin_addr);
-            in_port_t *port = &(ipv4->sin_port);
-
-            inet_ntop(ad_it->ai_family, addr, ipstr, sizeof(ipstr));
-            printf("%s:%d\n",ipstr,ntohs(*port));
-        }
-    }
-
-    for(ad_it = peers[1]; ad_it != NULL; ad_it = ad_it->ai_next) {
-        if(ad_it->ai_family == AF_INET) {
-            struct sockaddr_in *ipv4 = (struct sockaddr_in *)ad_it->ai_addr;
-            struct in_addr *addr = &(ipv4->sin_addr);
-            in_port_t *port = &(ipv4->sin_port);
-
-            inet_ntop(ad_it->ai_family, addr, ipstr, sizeof(ipstr));
-            printf("%s:%d\n",ipstr,ntohs(*port));
-        }
-    }
+    display_peer_info(peers); 
      
 
     /* Close file descriptors */

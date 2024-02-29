@@ -1,6 +1,8 @@
 #include "get_address_info.h"
 
 void get_address_info(struct addrinfo **peer, char *peer_ip, char *peer_port) {
+    /* Message */
+    printf("Getting Peer Address Info\n");
     
     struct addrinfo reference;
 
