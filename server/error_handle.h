@@ -3,7 +3,7 @@
 
 #include "header.h"
 
-void close_fd(int *fd, int size);
+void close_fd(int *fd);
 
 void error_handle(char *context);
 

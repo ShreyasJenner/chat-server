@@ -1,5 +1,7 @@
 all:
 	@gcc -o server \
 		server.c \
-		peer_handling.c \
-		error_handle.c
+		client_handling.c \
+		error_handle.c \
+		socket_handling.c \
+		message.c

@@ -1,16 +1,34 @@
+/* 
+ * Program implements functions that deal with freeing memory, closing file descriptors and handling errors
+ *
+ * Implements the following functions:
+ * close_fd(fd : int*) -> void
+ * error_handle(context: char*) -> void
+ */
+
+
+
 #include "error_handle.h"
 
-/* Function closes size number of file descriptors present in the file descriptor array */
-void close_fd(int *fd, int size) {
-    /* Message */
-    printf("Closing File Descriptors\n");
+
+
+
+/* 
+ * Function closes all active file descriptors present in the file descriptor array 
+ * active file descriptors are non zero
+ * integer array is initially memset with 0
+ */
+void close_fd(int *fd) {
 
     int i;                  /* iterator */
 
     i = 0;                  /* initialization */
 
-    /* Close file descriptors */
-    for(i=0;i<size;i++) {
+    /* 
+     * Close file descriptors that are active
+     * active file descriptors are non zero
+     */
+    for(i=0;i<FD_NO && fd[i]!=0;i++) {
         close(fd[i]);
     }
 }
