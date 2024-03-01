@@ -13,14 +13,12 @@ int main() {
     int bytes_read;                                                 /* store bytes read */
     int i, j;                                                       /* Iterators */
     int active_clients;                                             /* Stores number of active clients for a session */
-    int size;                                                       /* stores size of structures */
     int flag;                                                       /* Flag */
     char buff[BUF_SIZE];                                            /* buffer */
     char client_ip[CLIENT_NO][IP_WIDTH];                              /* store client ip addresses */
     char client_port[CLIENT_NO][PORT_WIDTH];                          /* store 4 digit client ports */
     
     struct addrinfo *clients[CLIENT_NO+1];                            /* null terminated array of pointers to struct addrinfo */
-    struct sockaddr_storage connecting_client[CLIENT_NO];             /* store information of connecting client */
     
 
     /* Initialize variables */
@@ -42,20 +40,20 @@ int main() {
 
     /* Store the client information into structs */
     /* Message */
-    message("Storing client address information");
+    message("Storing requested socket information");
     if(get_address_info(&clients[0], client_ip[0], client_port[0])!=0)
-        error_handle("getting address info for client");
+        error_handle("getting address info for requested socket");
 
 
     if(get_address_info(&clients[1], client_ip[1], client_port[1])!=0)
-        error_handle("getting address info for client");
+        error_handle("getting address info for requested socket");
 
     
 
-    /* Display client information */
+    /* Display active requested sockets */
     /* Message */
-    message("Displaying Client Info");
-    display_client_info(clients,CLIENT_NO); 
+    message("Displaying Requested Sockets Info");
+    display_client_req_info(clients,CLIENT_NO); 
      
     
     /* setup sockets for all active clients */ 
@@ -76,24 +74,45 @@ int main() {
     }
 
 
+    /* Get sockets for listening to clients */
+    /* Message */
+    message("Starting Listening Sockets");
+    struct pollfd pfds[CLIENT_NO];
+    pfds[0].fd = sockfd[0];
+    pfds[0].events = POLLIN;
+    pfds[1].fd = sockfd[1];
+    pfds[1].events = POLLIN;
+    int bytes_recv;
+    while(1) {
+        buff[0] = '\0';
+        if(poll(pfds, 2, 1000)==-1) {
+            close_fd(sockfd);
+            error_handle("polling");
+        }
 
-    /* Accept connection to socket */
-    size = sizeof connecting_client[0];
-    if((listen_sockfd[0]=accept(sockfd[0], (struct sockaddr *)&connecting_client[0], &size))<0) {
-        close_fd(sockfd);
-        error_handle("accepting connection to socket");
+        if(pfds[0].revents & POLLIN)
+            accept_sockets(sockfd[0],pfds);
+
+        if(pfds[1].revents & POLLIN)
+            accept_sockets(sockfd[1],pfds);
+
+        bytes_recv = recv(pfds[2].fd, buff, sizeof(buff), 0);
+        if(bytes_recv!=-1) {
+            buff[bytes_recv-1] = '\0';
+            printf("%d:%s\n",bytes_recv,buff);
+        }
+
+        if(!strcmp(buff,"stop"))
+            break;
     }
 
-    /* receive message from socket */
-    recv(listen_sockfd[0], buff, sizeof(buff), 0);
-    printf("%s",buff);
 
-
+    
 
     
     /* Free Memory allocated for struct addrinfo */
     /* Message */
-    message("Freeing addrinfo structs containing client info");
+    message("Freeing addrinfo structs containing socket info");
     for(i=0;i<active_clients;i++) {
         freeaddrinfo(clients[i]);
     }

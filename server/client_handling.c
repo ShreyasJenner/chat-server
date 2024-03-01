@@ -1,7 +1,7 @@
 /*
  * Program deals with all functions related to clients in the chat server 
  * Implements the following functions:
- * display_client_info(clients: struct addrinfo *[]) -> void
+ * display_client_req_info(clients: struct addrinfo *[]) -> void
  * read_client_list(fd: int, client_ip: char[][], client_port[][]) -> void
  * get_address_info(clients: struct addrinfo**, client_ip: char*, client_port: char*) -> void
  */
@@ -10,8 +10,8 @@
 
 /* Functions */
 
-/* Function to display Peer information as ip address and port */
-void display_client_info(struct addrinfo **clients, int size) {
+/* Function to display requested client socket information */
+void display_client_req_info(struct addrinfo **clients, int size) {
 
     /* Variable Declaration */
     char ipstring[IP_WIDTH];        /* Store ip value */

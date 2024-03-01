@@ -3,7 +3,7 @@
 
 #include "header.h"
 
-void display_client_info(struct addrinfo **clients, int size);
+void display_client_req_info(struct addrinfo **clients, int size);
 
 int read_client_list(char client_ip[CLIENT_NO][IP_WIDTH], char client_port[CLIENT_NO][PORT_WIDTH]);
 

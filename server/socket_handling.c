@@ -6,6 +6,7 @@
  * Functions:
  * basic_socket_setup(sockfd: int*, clients: struct addrinfo**) -> int
  * socket_start(sockfd: int*, clients: struct addrinfo**) -> int
+ * accept_sockets(sockfd: int, pfds: struct pollfd*) -> int
  */
 
 
@@ -64,4 +65,29 @@ int socket_start(int *sockfd, struct addrinfo **clients) {
             return -1;
         }
     }
+}
+
+
+/* function stores listening sockets into array after calling accept on client requested sockets */
+int accept_sockets(int sockfd, struct pollfd *pfds) {
+    /* Declaration */
+    int i;                                                              /* Iterator */
+    int size;                                                           /* stores size of structures */
+    char sock_info[BUF_SIZE];                                            /* stores socket information */
+    //struct sockaddr_storage connecting_client[CLIENT_NO];               /* store information of connecting client */
+    struct sockaddr_in connecting_client;
+    
+    /* Accept connection to socket */
+    size = sizeof connecting_client;
+
+    if((pfds[2].fd=accept(sockfd, (struct sockaddr *)&connecting_client, &size))<0) {
+        return -1;
+    }
+    pfds[2].events = POLLIN;
+
+    printf("Client %d:\n",i);
+    inet_ntop(connecting_client.sin_family, &connecting_client.sin_addr, sock_info, sizeof(sock_info));
+    printf("%s:%d\n",sock_info,ntohs(connecting_client.sin_port));
+
+    return 0;
 }

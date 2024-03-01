@@ -10,6 +10,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <poll.h>
 
 
 #define BUF_SIZE 100            /* size of string buffer */

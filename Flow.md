@@ -1,15 +1,15 @@
 ## Flow [ Currently implemented for 2 client system ]
-1. Server gets address information of peer 1
-2. Server gets address information of peer 2
-3. Server establishes connection to peer 1
-4. Server establishes connection to peer 2
-5. Reads msg from peer
-6. Sends msg to other peer
+1. Server gets address information of client 1
+2. Server gets address information of client 2
+3. Server establishes connection to client 1
+4. Server establishes connection to client 2
+5. Reads msg from client
+6. Sends msg to other client
 7. Go to Step 5
 
 ## Peer Information
-- Servers reads peer info from a file `peer_list`
-- `peer_list` is a file containing peer ip addresses and their ports in the following format
+- Servers reads client info from a file `client_list`
+- `client_list` is a file containing client ip addresses and their ports in the following format
 
 | ip addr | port |
 | ------- | ---- |
@@ -17,13 +17,16 @@
 | 192.168.22.4 | 4321 |
 
 - ip addresses and ports are space separated
-- each peer is on a new line
+- each client is on a new line
 
 # To-do
-- [x] Read peer list from file
-- [x] Server gets address info of each peer
-- [x] Server can display peer ip and port
-- [ ] Server creates socket connection to peers
+- [x] Read client list from file
+- [x] Server gets address info of each client
+- [x] Server can display client ip and port
+- [x] Server creates socket poll array for listening 
+- [ ] Replace sockfd array with poll array that is filled based on client list file
+- [ ] Server starts listening on socket
+- [ ] Server receives messages form clients on socket
 
 
 # Code Guidelines
