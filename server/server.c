@@ -1,12 +1,12 @@
 /* Header Files */
 #include "header.h"
-#include "read_peer_list.h"
-#include "get_address_info.h"
-#include "display_peer_info.h"
+#include "peer_handling.h"
+#include "error_handle.h"
+
 
 int main() {
     /* variables */    
-    int fd;                                                     /* file descriptor */
+    int fd[FD_NO];                                              /* file descriptor array */
     int bytes_read;                                             /* store bytes read */
     int i, j;                                                   /* Iterators */
     int flag;                                                   /* Flag */
@@ -14,8 +14,8 @@ int main() {
     char peer_ip[PEER_NO][IP_WIDTH];                            /* store peer ip addresses */
     char peer_port[PEER_NO][PORT_WIDTH];                        /* store 4 digit peer ports */
     
-    struct addrinfo *peers[PEER_NO];                            /* array of struct addrinfo */
-
+    struct addrinfo *peers[PEER_NO];                            /* array of pointers to struct addrinfo */
+    
 
     /* Initialize variables */
     bytes_read = -1;
@@ -25,13 +25,13 @@ int main() {
 
 
     /* Open peer list file */
-    if((fd = open("peer_list",O_RDONLY,0))<0) {
-        perror("Opening peer list file");
-        exit(1);
+    if((fd[0] = open("peer_list",O_RDONLY,0))<0) {
+        close_fd(fd,FD_NO);
+        error_handle("Opening peer list file");
     }
     
     /* store peer list into peer_ip and peer_port */
-    read_peer_list(fd, peer_ip, peer_port);
+    read_peer_list(fd[0], peer_ip, peer_port);
 
 
     /* Store the peer information into structs */
@@ -43,12 +43,25 @@ int main() {
     /* Display peer information */
     display_peer_info(peers); 
      
+    
+    /* Create socket to Peer */
+    if((fd[1] = socket(peers[0]->ai_family, peers[0]->ai_socktype, peers[0]->ai_protocol)) < 0) {
+        close_fd(fd, FD_NO);
+        error_handle("Creating socket");
+    }
 
-    /* Free Memory and Close file descriptors */
+    /* Bind socket */
+
+    
+    /* Free Memory allocated for struct addrinfo */
+    /* INCOMPLETE */
+    /* CHANGE TO HANDLE DYNAMIC NUMBER OF ACTIVE PEERS */
     for(i=0;i<2;i++) {
         freeaddrinfo(peers[i]);
     }
-    close(fd);
+
+    /* Close file descriptors in file descriptor array */
+    close_fd(fd,FD_NO);
 
     return 0;
 }
