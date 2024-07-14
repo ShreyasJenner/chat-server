@@ -56,7 +56,7 @@ int main() {
     display_client_req_info(clients,CLIENT_NO); 
      
     
-    /* setup sockets for all active clients */ 
+    /* create sockets for all active clients */ 
     /* Message */
     message("CREATING SOCKETS FOR CLIENTS");
     if((active_clients=basic_socket_setup(sockfd, (struct addrinfo **)&clients))<0) {
@@ -84,29 +84,75 @@ int main() {
     pfds[1].events = POLLIN;
     int bytes_recv;
 
-    int temp; //temp var
-          
-    while(1) {
+    char temp_name[20]; //temp name
+    
+    accept_sockets(sockfd[0],pfds,2);
+
+    accept_sockets(sockfd[1],pfds,3);
+
+    // poll the array for sockets
+    while(poll(pfds,4,1000)!=-1) {
         buff[0] = '\0';
 
-        if(pfds[0].revents & POLLIN)
-            accept_sockets(sockfd[0],pfds);
+        if(pfds[2].revents & POLLIN) {
+            bytes_recv = recv(pfds[2].fd, buff, sizeof(buff), 0);
+            if(bytes_recv==0) {
+                printf("CLIENT %d DISCONNECTED\n",pfds[2].fd);
 
-        if(pfds[1].revents & POLLIN)
-            accept_sockets(sockfd[1],pfds);
+                // Copy to buffer client disconnect msg 
+                strcpy(buff,"Other Client disconnected\n");
+                
+                // send msg through socket
+                send(pfds[3].fd, buff, strlen(buff), 0);
+                break;
+            }
+            // if no error in reading socket
+            else if(bytes_recv!=-1) {
+                // close string with \n\0
+                buff[bytes_recv-1] = '\n';
+                buff[bytes_recv] = '\0';
 
-        bytes_recv = recv(pfds[2].fd, buff, sizeof(buff), 0);
-        if(bytes_recv==0) {
-            printf("CLIENT %d DISCONNECTED\n",pfds[2].fd);
-            break;
+                // print on stdout without \n as it already has \n
+                printf("%d[%d]:%s",pfds[2].fd,bytes_recv,buff);
+
+
+                // send name through socket
+                strcpy(temp_name,"Client 1: ");
+                send(pfds[3].fd, temp_name, strlen(temp_name), 0);
+                // send msg to other clients socket
+                send(pfds[3].fd, buff, strlen(buff), 0);
+            }
         }
-        else if(bytes_recv!=-1) {
-            buff[bytes_recv-1] = '\0';
-            printf("%d[%d]:%s\n",pfds[2].fd,bytes_recv,buff);
-        }
 
-        if(!strcmp(buff,"stop"))
-            break;
+        if(pfds[3].revents & POLLIN) {
+            bytes_recv = recv(pfds[3].fd, buff, sizeof(buff), 0);
+            if(bytes_recv==0) {
+                printf("CLIENT %d DISCONNECTED\n",pfds[2].fd);
+                
+                // Copy to buffer client disconnect msg 
+                strcpy(buff,"Other Client disconnected\n");
+
+                // send msg through socket
+                send(pfds[2].fd, buff, strlen(buff), 0);
+
+                break;
+            }
+            else if(bytes_recv!=-1) {
+                // close string with \n\0
+                buff[bytes_recv-1] = '\n';
+                buff[bytes_recv] = '\0';
+
+                // print on stdout
+                printf("%d[%d]:%s",pfds[3].fd,bytes_recv,buff);
+
+
+                // send name through socket
+                strcpy(temp_name,"Client 2: ");
+                send(pfds[2].fd, temp_name, strlen(temp_name), 0);
+                // send msg to other clients socket
+                send(pfds[2].fd, buff, strlen(buff), 0);
+            }
+        }
     }
     
 

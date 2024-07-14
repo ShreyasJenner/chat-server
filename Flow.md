@@ -24,9 +24,10 @@
 - [x] Server gets address info of each client
 - [x] Server can display client ip and port
 - [x] Server creates socket poll array for listening 
+- [x] Server starts listening on socket
+- [ ] Clients send to server instead of other client directly [server handles sending of messages to other client]
 - [ ] Replace sockfd array with poll array that is filled based on client list file
-- [ ] Server starts listening on socket
-- [ ] Server receives messages form clients on socket
+- [ ] Allow more than two clients to communicate with the server
 
 
 # Code Guidelines

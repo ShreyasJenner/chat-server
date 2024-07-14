@@ -6,7 +6,7 @@
  * Functions:
  * basic_socket_setup(sockfd: int*, clients: struct addrinfo**) -> int
  * socket_start(sockfd: int*, clients: struct addrinfo**) -> int
- * accept_sockets(sockfd: int, pfds: struct pollfd*) -> int
+ * accept_sockets(sockfd: int, pfds: struct pollfd*, index: int) -> int
  */
 
 
@@ -69,7 +69,7 @@ int socket_start(int *sockfd, struct addrinfo **clients) {
 
 
 /* function stores listening sockets into array after calling accept on client requested sockets */
-int accept_sockets(int sockfd, struct pollfd *pfds) {
+int accept_sockets(int sockfd, struct pollfd *pfds, int index) {
     /* Declaration */
     int i;                                                              /* Iterator */
     int size;                                                           /* stores size of structures */
@@ -80,10 +80,10 @@ int accept_sockets(int sockfd, struct pollfd *pfds) {
     /* Accept connection to socket */
     size = sizeof connecting_client;
 
-    if((pfds[2].fd=accept(sockfd, (struct sockaddr *)&connecting_client, &size))<0) {
+    if((pfds[index].fd=accept(sockfd, (struct sockaddr *)&connecting_client, &size))<0) {
         return -1;
     }
-    pfds[2].events = POLLIN;
+    pfds[index].events = POLLIN;
 
     printf("Client %d:\n",i);
     inet_ntop(connecting_client.sin_family, &connecting_client.sin_addr, sock_info, sizeof(sock_info));

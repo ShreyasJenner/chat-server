@@ -7,6 +7,6 @@ int basic_socket_setup(int *sockfd, struct addrinfo **clients);
 
 int socket_start(int *sockfd, struct addrinfo **clients);
 
-int accept_sockets(int sockfd, struct pollfd *pfds);
+int accept_sockets(int sockfd, struct pollfd *pfds, int index);
 
 #endif
