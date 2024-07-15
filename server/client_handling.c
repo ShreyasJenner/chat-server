@@ -120,7 +120,8 @@ int get_address_info(struct addrinfo **client, char *client_ip, char *client_por
     reference.ai_flags = AI_PASSIVE;                         
     
     // Store a linked list of structs into client
-    if(getaddrinfo(client_ip, client_port, &reference, client)!=0)
+    if(getaddrinfo(client_ip, client_port, &reference, client)!=0) {
         return -1;
+    }
     return 0;
 }

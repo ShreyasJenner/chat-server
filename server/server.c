@@ -8,21 +8,26 @@
 
 int main() {
     /* variables */    
+    int bytes_recv;                                                 /* stores the number of bytes received when sending/receving */
+    int disconnect_flag;                                            /* disconnect flag for main while loop */
     int sockfd[FD_NO];                                              /* socket descriptor array */
-    int listen_sockfd[FD_NO];                                           /* array for socket descriptors created when listening */
+    int listen_sockfd[FD_NO];                                       /* array for socket descriptors created when listening */
     int bytes_read;                                                 /* store bytes read */
     int i, j;                                                       /* Iterators */
     int active_clients;                                             /* Stores number of active clients for a session */
     int flag;                                                       /* Flag */
     char buff[BUF_SIZE];                                            /* buffer */
-    char client_ip[CLIENT_NO][IP_WIDTH];                              /* store client ip addresses */
-    char client_port[CLIENT_NO][PORT_WIDTH];                          /* store 4 digit client ports */
+    char client_ip[CLIENT_NO][IP_WIDTH];                            /* store client ip addresses */
+    char client_port[CLIENT_NO][PORT_WIDTH];                        /* store 4 digit client ports */
+    char client_name[20];                                           /* client name storage */
     
-    struct addrinfo *clients[CLIENT_NO+1];                            /* null terminated array of pointers to struct addrinfo */
+    struct addrinfo *clients[CLIENT_NO+1];                          /* null terminated array of pointers to struct addrinfo */
+    struct pollfd pfds[CLIENT_NO];                                  /* stores the pollfd struct for sockets that are polled to */
     
 
     /* Initialize variables */
     bytes_read = -1;
+    disconnect_flag = 0;
     // make all pointers point to NULL
     for(i=0;i<CLIENT_NO+1;i++)
         clients[i] = NULL;
@@ -37,16 +42,19 @@ int main() {
         error_handle("Reading client list");
     }
 
+    for(i=0;i<3;i++) {
+        printf("%s\n",client_port[i]);
+    }
+
 
     /* Store the client information into structs */
     /* Message */
     message("STORING REQUESTED SOCKET INFORMATION");
-    if(get_address_info(&clients[0], client_ip[0], client_port[0])!=0)
-        error_handle("getting address info for requested socket");
-
-
-    if(get_address_info(&clients[1], client_ip[1], client_port[1])!=0)
-        error_handle("getting address info for requested socket");
+    for(i=0;i<3;i++) {
+        if(get_address_info(&clients[i], client_ip[i], client_port[i])!=0) {
+            error_handle("getting address info for socket");
+        }
+    }
 
     
 
@@ -77,81 +85,60 @@ int main() {
     /* Get sockets for listening to clients */
     /* Message */
     message("STARTING LISTENING SOCKETS");
-    struct pollfd pfds[CLIENT_NO];
-    pfds[0].fd = sockfd[0];
-    pfds[0].events = POLLIN;
-    pfds[1].fd = sockfd[1];
-    pfds[1].events = POLLIN;
-    int bytes_recv;
 
-    char temp_name[20]; //temp name
-    
-    accept_sockets(sockfd[0],pfds,2);
+   
+    /* loop that accepts a pre-determined number of sockets and stores the returned sockets after accepting into pfds for polling */
+    for(i=0;i<3;i++) {
+        accept_sockets(sockfd[i],pfds,i);
+    }
 
-    accept_sockets(sockfd[1],pfds,3);
-
-    // poll the array for sockets
-    while(poll(pfds,4,1000)!=-1) {
+    /* poll pre-determined number of sockets in pfds array */
+    while(poll(pfds,3,1000)!=-1 && !disconnect_flag) {
         buff[0] = '\0';
+        
+        /* loop through pfds array checking for sockets that have data in them */
+        for(i=0;i<3;i++) {
+            if(pfds[i].revents & POLLIN) {
+                bytes_recv = recv(pfds[i].fd, buff, sizeof(buff), 0);
+                if(bytes_recv==0) { /* client has disconnected */
+                    disconnect_flag = 1;
+                    printf("CLIENT %d DISCONNECTED\n",pfds[i].fd);
 
-        if(pfds[2].revents & POLLIN) {
-            bytes_recv = recv(pfds[2].fd, buff, sizeof(buff), 0);
-            if(bytes_recv==0) {
-                printf("CLIENT %d DISCONNECTED\n",pfds[2].fd);
+                    /* Copy `disconnect msg` to buffer client */
+                    strcpy(buff,"Other Client disconnected\n");
 
-                // Copy to buffer client disconnect msg 
-                strcpy(buff,"Other Client disconnected\n");
-                
-                // send msg through socket
-                send(pfds[3].fd, buff, strlen(buff), 0);
-                break;
+                    /* send msg to other clients through socket */
+                    for(j=0;j<3;j++) {
+                        /* if disconnecting socket is not being pointed to by j */
+                        if(j!=i)
+                            send(pfds[j].fd, buff, strlen(buff), 0);
+                    }
+                    break;
+                }
+                /* else if there is no error in reading socket */
+                else if(bytes_recv>0) {
+                    /* close string received with \n\0 */
+                    buff[bytes_recv-1] = '\n';
+                    buff[bytes_recv] = '\0';
+
+                    /* print on stdout without \n as it already has \n */
+                    printf("%d[%d]:%s",pfds[i].fd,bytes_recv,buff);
+
+                    /* store client details in variable client_name */ 
+                    strcpy(client_name,"Client ");
+                    snprintf(client_name, 10, "%d :", i);
+
+                    /* send client details to all other clients */
+                    for(j=0;j<3;j++) {
+                        if(j!=i) {
+                            send(pfds[j].fd, client_name, strlen(client_name), 0);
+                            /* send msg to other clients socket */
+                            send(pfds[j].fd, buff, strlen(buff), 0);
+                        }
+                    }
+                }
             }
-            // if no error in reading socket
-            else if(bytes_recv!=-1) {
-                // close string with \n\0
-                buff[bytes_recv-1] = '\n';
-                buff[bytes_recv] = '\0';
 
-                // print on stdout without \n as it already has \n
-                printf("%d[%d]:%s",pfds[2].fd,bytes_recv,buff);
-
-
-                // send name through socket
-                strcpy(temp_name,"Client 1: ");
-                send(pfds[3].fd, temp_name, strlen(temp_name), 0);
-                // send msg to other clients socket
-                send(pfds[3].fd, buff, strlen(buff), 0);
-            }
-        }
-
-        if(pfds[3].revents & POLLIN) {
-            bytes_recv = recv(pfds[3].fd, buff, sizeof(buff), 0);
-            if(bytes_recv==0) {
-                printf("CLIENT %d DISCONNECTED\n",pfds[2].fd);
-                
-                // Copy to buffer client disconnect msg 
-                strcpy(buff,"Other Client disconnected\n");
-
-                // send msg through socket
-                send(pfds[2].fd, buff, strlen(buff), 0);
-
-                break;
-            }
-            else if(bytes_recv!=-1) {
-                // close string with \n\0
-                buff[bytes_recv-1] = '\n';
-                buff[bytes_recv] = '\0';
-
-                // print on stdout
-                printf("%d[%d]:%s",pfds[3].fd,bytes_recv,buff);
-
-
-                // send name through socket
-                strcpy(temp_name,"Client 2: ");
-                send(pfds[2].fd, temp_name, strlen(temp_name), 0);
-                // send msg to other clients socket
-                send(pfds[2].fd, buff, strlen(buff), 0);
-            }
         }
     }
     

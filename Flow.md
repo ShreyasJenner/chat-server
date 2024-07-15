@@ -12,7 +12,7 @@
 - `client_list` is a file containing client ip addresses and their ports in the following format
 
 | ip addr | port |
-| ------- | ---- |
+| ------- | ---- 
 | localhost | 1234 |
 | 192.168.22.4 | 4321 |
 
@@ -25,9 +25,11 @@
 - [x] Server can display client ip and port
 - [x] Server creates socket poll array for listening 
 - [x] Server starts listening on socket
-- [ ] Clients send to server instead of other client directly [server handles sending of messages to other client]
-- [ ] Replace sockfd array with poll array that is filled based on client list file
-- [ ] Allow more than two clients to communicate with the server
+- [x] Clients send to server instead of other client directly [server handles sending of messages to other client]
+- [x] Allow more than two clients to communicate with the server
+- [ ] Communciation allowed only when all clients connect. Replace so that any client can communicate with another even if all clients haven't logged in
+- [ ] Modify program to allow for communication through network as well (NAT??)
+- [ ] Allow dynamic retrieval of ip address so that client\_list file need not be manually modified
 
 
 # Code Guidelines
