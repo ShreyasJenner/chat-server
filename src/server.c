@@ -17,8 +17,8 @@ int main() {
     int active_clients;                                             /* Stores number of active clients for a session */
     int flag;                                                       /* Flag */
     char buff[BUF_SIZE];                                            /* buffer */
-    char client_ip[IP_WIDTH];                            /* store client ip addresses */
-    char client_port[PORT_WIDTH];                        /* store 4 digit client ports */
+    char host_ip[IP_WIDTH];                                         /* store client ip addresses */
+    char host_port[PORT_WIDTH];                                     /* store 4 digit client ports */
     char client_name[20];                                           /* client name storage */
     
     struct addrinfo *clients;                                       /* null terminated array of pointers to struct addrinfo */
@@ -34,22 +34,24 @@ int main() {
     memset(listen_sockfd, 0, sizeof(listen_sockfd));
 
 
-    /* store client list into client_ip and client_port */
+    /* store  host_ip and host_port */
     /* Log time into file */
     time_message();
     message("READING CLIENT IP ADDRESS AND PORT");
-    if(read_client_list(client_ip, client_port)!=0) {
-        error_handle("Reading client list");
+    if(get_host_ip(host_ip)!=0) {
+        error_handle("Getting host ip");
     }
+
+    get_host_port(host_port);
     
     /* Print client ip and port */
-    printf("Hosting: %s %s\n",client_ip,client_port);
+    printf("Hosting: %s %s\n",host_ip,host_port);
 
 
     /* Store the client information into structs */
     /* Message */
     message("STORING REQUESTED SOCKET INFORMATION");
-    if(get_address_info(&clients, client_ip, client_port)!=0) {
+    if(get_address_info(&clients, host_ip, host_port)!=0) {
         error_handle("getting address info for socket");
     }
 
@@ -81,11 +83,16 @@ int main() {
 
     /* Get sockets for listening to clients */
     /* Message */
-    message("STARTING LISTENING SOCKETS");
+    message("STARTING LISTENING SOCKETS\n");
 
+    /* Create host socket; blocks until host connection to server socket */
+    accept_sockets(sockfd, pfds, 0);
+    active_clients++;
    
     /* set socket to nonblocking */
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
+    
+
 
     /* poll pre-determined number of sockets in pfds array */
     while(poll(pfds,active_clients,1000)!=-1 && !disconnect_flag) {
@@ -100,22 +107,24 @@ int main() {
             if(pfds[i].revents & POLLIN) {
                 bytes_recv = recv(pfds[i].fd, buff, sizeof(buff), 0);
                 if(bytes_recv==0) { /* client has disconnected */
-                    disconnect_flag = 1;
-                    
-                    /* put the message into buff and log it */
-                    sprintf(buff, "CLIENT %d DISCONNECTED\n",pfds[i].fd);
-                    message(buff);
+                    /* If server has disconnected */
+                    if(i == 0 && pfds[i].fd != -1) {
+                        disconnect_flag = 1;
 
-                    /* Copy `disconnect msg` to buffer client */
-                    strcpy(buff,"Other Client disconnected\n");
-
-                    /* send msg to other clients through socket */
-                    for(j=0;j<active_clients;j++) {
-                        /* if disconnecting socket is not being pointed to by j */
-                        if(j!=i)
-                            send(pfds[j].fd, buff, strlen(buff), 0);
+                        /* put server disconnect message into buff and log it */
+                        sprintf(buff, "SERVER DISCONNECTED\n");
+                        message(buff);
+                    } else {
+                        /* put client disconnect message into buff and log it */
+                        sprintf(buff, "CLIENT %d DISCONNECTED\n",pfds[i].fd);
+                        message(buff);
+                        
+                        /* set corresponding fd to -1 so that disconnect msg isnt printed repeatedly */
+                        pfds[i].fd = -1;
                     }
-                    break;
+                    
+                    /* send msg to other clients through socket */
+                    broadcast_msg(pfds, buff, active_clients, i);
                 }
                 /* else if there is no error in reading socket */
                 else if(bytes_recv>0) {
@@ -127,17 +136,17 @@ int main() {
                     printf("%d[%d]:%s",pfds[i].fd,bytes_recv,buff);
 
                     /* store client details in variable client_name */ 
-                    strcpy(client_name,"Client ");
-                    snprintf(client_name, 10, "%d :", i);
+                    if(i!=0) {
+                        strcpy(client_name,"Client ");
+                        snprintf(client_name, 10, "%d: ", i);
+                    }
+                    else {
+                        strcpy(client_name, "Server: ");
+                    }
 
                     /* send client details to all other clients */
-                    for(j=0;j<active_clients;j++) {
-                        if(j!=i) {
-                            send(pfds[j].fd, client_name, strlen(client_name), 0);
-                            /* send msg to other clients socket */
-                            send(pfds[j].fd, buff, strlen(buff), 0);
-                        }
-                    }
+                    broadcast_msg(pfds, client_name, active_clients, i);
+                    broadcast_msg(pfds, buff, active_clients, i);
                 }
             }
 
@@ -148,7 +157,7 @@ int main() {
     
     /* Free Memory allocated for struct addrinfo */
     /* Message */
-    message("FREEING ADDRINFO STRUCTS CONTAINING SOCKET INFO");
+    message("\nFREEING ADDRINFO STRUCTS CONTAINING SOCKET INFO");
     freeaddrinfo(clients);
 
     /* Close descriptors in listening socket descriptor array */
@@ -159,6 +168,8 @@ int main() {
     /* Message */
     message("CLOSING SOCKET DESCRIPTORS");
     close_fd(&sockfd);
+
+    printf("Program Exiting\n");
 
     return 0;
 }

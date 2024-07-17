@@ -5,7 +5,9 @@
 
 void display_client_req_info(struct addrinfo **clients, int size);
 
-int read_client_list(char *client_ip, char *client_port);
+int get_host_ip(char *client_ip);
+
+void get_host_port(char *client_port);
 
 int get_address_info(struct addrinfo **client, char *client_ip, char *client_port);
 

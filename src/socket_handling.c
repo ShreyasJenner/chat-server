@@ -7,6 +7,7 @@
  * basic_socket_setup(sockfd: int*, clients: struct addrinfo**) -> int
  * socket_start(sockfd: int*, clients: struct addrinfo**) -> int
  * accept_sockets(sockfd: int, pfds: struct pollfd*, index: int) -> int
+ * broadcast_msg(pfds: struct pollfd*, buff: char*, active_clients: int, curr_client: int) {
  */
 
 
@@ -20,26 +21,6 @@ int basic_socket_setup(int *sockfd, struct addrinfo **clients) {
     /* Declaration */
     int i;                                                      /* Iterator */
     int yes;                                                    /* used to store 1 for setsockopt function */
-
-    /*
-     * For loop that iterates through all active clients 
-     * pointers of clients point to NULL if they are not pointing to an active client
-     */
-
-    /*
-    for(i=0; clients[i]!=NULL; i++) {
-        // Create socket for Active Peers
-        if((sockfd[i] = socket(clients[0]->ai_family, clients[0]->ai_socktype, clients[0]->ai_protocol)) < 0) {
-            return -1;
-        }
-
-        // Enable reuse of socket
-        yes = 1;
-        if(setsockopt(sockfd[i], SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) != 0) {
-            return -1;
-        }
-    }
-    */
 
     if((*sockfd = socket((*clients)->ai_family, (*clients)->ai_socktype, (*clients)->ai_protocol)) < 0) {
         return -1;
@@ -85,15 +66,14 @@ int socket_start(int *sockfd, struct addrinfo **clients) {
 }
 
 
-/* function stores listening sockets into array after calling accept on client requested sockets 
+/* 
+ * Function stores listening sockets into array after calling accept on client requested sockets 
  * returns 0 on success
  * */
 int accept_sockets(int sockfd, struct pollfd *pfds, int index) {
-    /* Declaration */
-    int i;                                                              /* Iterator */
-    int size;                                                           /* stores size of structures */
-    char sock_info[BUF_SIZE];                                            /* stores socket information */
-    //struct sockaddr_storage connecting_client[CLIENT_NO];               /* store information of connecting client */
+    int size;                                                               /* stores size of structures */
+    char sock_info[BUF_SIZE], buff[BUF_SIZE];                               /* stores socket information */
+    //struct sockaddr_storage connecting_client[CLIENT_NO];                 /* store information of connecting client */
     struct sockaddr_in connecting_client;
     
     /* Accept connection to socket */
@@ -103,10 +83,31 @@ int accept_sockets(int sockfd, struct pollfd *pfds, int index) {
         return -1;
     }
     pfds[index].events = POLLIN;
-
-    printf("Client %d:\n",i);
-    inet_ntop(connecting_client.sin_family, &connecting_client.sin_addr, sock_info, sizeof(sock_info));
-    printf("%s:%d\n",sock_info,ntohs(connecting_client.sin_port));
+    
+    if(index == 0) {
+        printf("Server has joined\n");
+    } 
+    else {
+        inet_ntop(connecting_client.sin_family, &connecting_client.sin_addr, sock_info, sizeof(sock_info));
+        sprintf(buff, "Client %s:%d joined\n",sock_info,ntohs(connecting_client.sin_port)); 
+        broadcast_msg(pfds, buff, index, index);
+    }
 
     return 0;
+}
+
+
+/* 
+ * Function broadcasts messages to all connected clients
+ */
+void broadcast_msg(struct pollfd *pfds, char *buff, int active_clients, int curr_client) {
+    /* Declaration */
+    int j;
+    
+    /* Send message to all clients except curr one */
+    for(j=0;j<active_clients;j++) {
+        /* if disconnecting socket is not being pointed to by j */
+        if(j!=curr_client)
+            send(pfds[j].fd, buff, strlen(buff), 0);
+    }
 }

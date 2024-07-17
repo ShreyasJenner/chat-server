@@ -2,7 +2,8 @@
  * Program deals with all functions related to clients in the chat server 
  * Implements the following functions:
  * display_client_req_info(clients: struct addrinfo *[]) -> void
- * read_client_list(fd: int, client_ip: char*, client_port*) -> int
+ * get_host_ip(fd: int, host_ip: char*) -> int
+ * get_host_port(host_port: char*) -> void
  * get_address_info(clients: struct addrinfo**, client_ip: char*, client_port: char*) -> void
  */
 
@@ -36,7 +37,7 @@ void display_client_req_info(struct addrinfo **clients, int size) {
 /* Function reads list of client ip addresses and ports from a file and stores into a character array 
  * used by get_address_info function to get client addressing info
  */
-int read_client_list(char *client_ip, char *client_port) {
+int get_host_ip(char *client_ip) {
 
     /* variables */
     struct ifreq ifr;       /* store ip details */
@@ -58,14 +59,17 @@ int read_client_list(char *client_ip, char *client_port) {
     /* copy given ip4 address into client_ip */
     strcpy(client_ip, inet_ntoa(( (struct sockaddr_in *)&ifr.ifr_addr)->sin_addr) );
 
+
+    /* return 0 to indicate success */
+    return 0;
+}
+
+void get_host_port(char *client_port) {
     /* set seed for random */
     srand(time(NULL));
 
     /* copy random generated port value into client_port */
     sprintf(client_port, "%d", rand()%(UPPER_PORT-LOWER_PORT+1)+LOWER_PORT);
-
-    /* return 0 to indicate success */
-    return 0;
 }
 
 

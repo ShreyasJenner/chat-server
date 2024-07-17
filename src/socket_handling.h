@@ -9,4 +9,6 @@ int socket_start(int *sockfd, struct addrinfo **clients);
 
 int accept_sockets(int sockfd, struct pollfd *pfds, int index);
 
+void broadcast_msg(struct pollfd *pfds, char *buff, int active_clients, int curr_client);
+
 #endif
