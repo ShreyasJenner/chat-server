@@ -17,8 +17,8 @@ int main() {
     int active_clients;                                             /* Stores number of active clients for a session */
     int flag;                                                       /* Flag */
     char buff[BUF_SIZE];                                            /* buffer */
-    char client_ip[CLIENT_NO][IP_WIDTH];                            /* store client ip addresses */
-    char client_port[CLIENT_NO][PORT_WIDTH];                        /* store 4 digit client ports */
+    char client_ip[IP_WIDTH];                            /* store client ip addresses */
+    char client_port[PORT_WIDTH];                        /* store 4 digit client ports */
     char client_name[20];                                           /* client name storage */
     
     struct addrinfo *clients;                                       /* null terminated array of pointers to struct addrinfo */
@@ -35,20 +35,21 @@ int main() {
 
 
     /* store client list into client_ip and client_port */
-    /* Message */
+    /* Log time into file */
+    time_message();
     message("READING CLIENT IP ADDRESS AND PORT");
     if(read_client_list(client_ip, client_port)!=0) {
         error_handle("Reading client list");
     }
     
     /* Print client ip and port */
-    printf("Client %s:%s\n",client_ip[i],client_port[i]);
+    printf("Hosting: %s %s\n",client_ip,client_port);
 
 
     /* Store the client information into structs */
     /* Message */
     message("STORING REQUESTED SOCKET INFORMATION");
-    if(get_address_info(&clients, client_ip[i], client_port[i])!=0) {
+    if(get_address_info(&clients, client_ip, client_port)!=0) {
         error_handle("getting address info for socket");
     }
 
@@ -100,7 +101,10 @@ int main() {
                 bytes_recv = recv(pfds[i].fd, buff, sizeof(buff), 0);
                 if(bytes_recv==0) { /* client has disconnected */
                     disconnect_flag = 1;
-                    printf("CLIENT %d DISCONNECTED\n",pfds[i].fd);
+                    
+                    /* put the message into buff and log it */
+                    sprintf(buff, "CLIENT %d DISCONNECTED\n",pfds[i].fd);
+                    message(buff);
 
                     /* Copy `disconnect msg` to buffer client */
                     strcpy(buff,"Other Client disconnected\n");

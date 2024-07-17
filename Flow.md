@@ -27,9 +27,10 @@
 - [x] Server starts listening on socket
 - [x] Clients send to server instead of other client directly [server handles sending of messages to other client]
 - [x] Allow more than two clients to communicate with the server
+- [x] Modify program to allow for communication through network as well (NAT??)
 - [ ] Communciation allowed only when all clients connect. Replace so that any client can communicate with another even if all clients haven't logged in
-- [ ] Modify program to allow for communication through network as well (NAT??)
-- [ ] Allow dynamic retrieval of ip address so that client\_list file need not be manually modified
+- [x] Allow dynamic retrieval of ip address so that client\_list file need not be manually modified
+- [ ] Send first few messages to joining clients and format server output
 
 
 # Code Guidelines
