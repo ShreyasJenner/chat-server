@@ -26,6 +26,7 @@ int main() {
     
 
     /* Initialize variables */
+    active_clients = 1;
     bytes_read = -1;
     disconnect_flag = 0;
     // make all pointers point to NULL
@@ -38,19 +39,19 @@ int main() {
     /* store client list into client_ip and client_port */
     /* Message */
     message("READING CLIENT IP ADDRESS AND PORT");
-    if(read_client_list(client_ip, client_port)!=0) {
+    if(read_client_list(client_ip, client_port, active_clients)!=0) {
         error_handle("Reading client list");
     }
 
-    for(i=0;i<3;i++) {
-        printf("%s\n",client_port[i]);
+    for(i=0;i<active_clients;i++) {
+        printf("Client %s:%s\n",client_ip[i],client_port[i]);
     }
 
 
     /* Store the client information into structs */
     /* Message */
     message("STORING REQUESTED SOCKET INFORMATION");
-    for(i=0;i<3;i++) {
+    for(i=0;i<active_clients;i++) {
         if(get_address_info(&clients[i], client_ip[i], client_port[i])!=0) {
             error_handle("getting address info for socket");
         }
@@ -88,16 +89,22 @@ int main() {
 
    
     /* loop that accepts a pre-determined number of sockets and stores the returned sockets after accepting into pfds for polling */
-    for(i=0;i<3;i++) {
+    for(i=0;i<active_clients;i++) {
         accept_sockets(sockfd[i],pfds,i);
     }
 
+    /* set socket to nonblocking */
+    fcntl(sockfd[0], F_SETFL, O_NONBLOCK);
+
     /* poll pre-determined number of sockets in pfds array */
-    while(poll(pfds,3,1000)!=-1 && !disconnect_flag) {
+    while(poll(pfds,active_clients,1000)!=-1 && !disconnect_flag) {
         buff[0] = '\0';
+
+        /* accept socket otherwise continue */
+        accept_sockets(sockfd[0], pfds, active_clients++);
         
         /* loop through pfds array checking for sockets that have data in them */
-        for(i=0;i<3;i++) {
+        for(i=0;i<active_clients;i++) {
             if(pfds[i].revents & POLLIN) {
                 bytes_recv = recv(pfds[i].fd, buff, sizeof(buff), 0);
                 if(bytes_recv==0) { /* client has disconnected */
@@ -108,7 +115,7 @@ int main() {
                     strcpy(buff,"Other Client disconnected\n");
 
                     /* send msg to other clients through socket */
-                    for(j=0;j<3;j++) {
+                    for(j=0;j<active_clients;j++) {
                         /* if disconnecting socket is not being pointed to by j */
                         if(j!=i)
                             send(pfds[j].fd, buff, strlen(buff), 0);
@@ -129,7 +136,7 @@ int main() {
                     snprintf(client_name, 10, "%d :", i);
 
                     /* send client details to all other clients */
-                    for(j=0;j<3;j++) {
+                    for(j=0;j<active_clients;j++) {
                         if(j!=i) {
                             send(pfds[j].fd, client_name, strlen(client_name), 0);
                             /* send msg to other clients socket */

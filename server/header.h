@@ -18,6 +18,6 @@
 #define IP_WIDTH 16             /* width of ip addr string */
 #define PORT_WIDTH 5            /* width of port string */
 #define FD_NO CLIENT_NO+1         /* max number of file descriptors */
-#define MAX_CON 2               /* max allowed connections on port*/
+#define MAX_CON 10               /* max allowed connections on port*/
 
 #endif

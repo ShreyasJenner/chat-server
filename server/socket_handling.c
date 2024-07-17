@@ -79,7 +79,7 @@ int accept_sockets(int sockfd, struct pollfd *pfds, int index) {
     
     /* Accept connection to socket */
     size = sizeof connecting_client;
-
+    
     if((pfds[index].fd=accept(sockfd, (struct sockaddr *)&connecting_client, &size))<0) {
         return -1;
     }

@@ -41,7 +41,7 @@ void display_client_req_info(struct addrinfo **clients, int size) {
 /* Function reads list of client ip addresses and ports from a file and stores into a character array 
  * used by get_address_info function to get client addressing info
  */
-int read_client_list(char client_ip[CLIENT_NO][IP_WIDTH], char client_port[CLIENT_NO][PORT_WIDTH]) {
+int read_client_list(char client_ip[CLIENT_NO][IP_WIDTH], char client_port[CLIENT_NO][PORT_WIDTH], int active_clients) {
 
     /* variables */
     int i,j,flag, bytes_read;
@@ -77,6 +77,10 @@ int read_client_list(char client_ip[CLIENT_NO][IP_WIDTH], char client_port[CLIEN
         
         if(flag) {
             if(buff[0] == '\n') {
+
+                // update number of clients
+                active_clients++;
+
                 client_port[i][j] = '\0';
                 i++;
                 j = 0;
