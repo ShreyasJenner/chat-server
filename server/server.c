@@ -10,7 +10,7 @@ int main() {
     /* variables */    
     int bytes_recv;                                                 /* stores the number of bytes received when sending/receving */
     int disconnect_flag;                                            /* disconnect flag for main while loop */
-    int sockfd[FD_NO];                                              /* socket descriptor array */
+    int sockfd;                                                     /* socket descriptor array */
     int listen_sockfd[FD_NO];                                       /* array for socket descriptors created when listening */
     int bytes_read;                                                 /* store bytes read */
     int i, j;                                                       /* Iterators */
@@ -21,40 +21,35 @@ int main() {
     char client_port[CLIENT_NO][PORT_WIDTH];                        /* store 4 digit client ports */
     char client_name[20];                                           /* client name storage */
     
-    struct addrinfo *clients[CLIENT_NO+1];                          /* null terminated array of pointers to struct addrinfo */
+    struct addrinfo *clients;                                       /* null terminated array of pointers to struct addrinfo */
     struct pollfd pfds[CLIENT_NO];                                  /* stores the pollfd struct for sockets that are polled to */
     
 
     /* Initialize variables */
-    active_clients = 1;
+    active_clients = 0;
     bytes_read = -1;
     disconnect_flag = 0;
     // make all pointers point to NULL
-    for(i=0;i<CLIENT_NO+1;i++)
-        clients[i] = NULL;
-    memset(sockfd, 0, sizeof(sockfd));
+    clients = NULL;
     memset(listen_sockfd, 0, sizeof(listen_sockfd));
 
 
     /* store client list into client_ip and client_port */
     /* Message */
     message("READING CLIENT IP ADDRESS AND PORT");
-    if(read_client_list(client_ip, client_port, active_clients)!=0) {
+    if(read_client_list(client_ip, client_port)!=0) {
         error_handle("Reading client list");
     }
-
-    for(i=0;i<active_clients;i++) {
-        printf("Client %s:%s\n",client_ip[i],client_port[i]);
-    }
+    
+    /* Print client ip and port */
+    printf("Client %s:%s\n",client_ip[i],client_port[i]);
 
 
     /* Store the client information into structs */
     /* Message */
     message("STORING REQUESTED SOCKET INFORMATION");
-    for(i=0;i<active_clients;i++) {
-        if(get_address_info(&clients[i], client_ip[i], client_port[i])!=0) {
-            error_handle("getting address info for socket");
-        }
+    if(get_address_info(&clients, client_ip[i], client_port[i])!=0) {
+        error_handle("getting address info for socket");
     }
 
     
@@ -62,14 +57,14 @@ int main() {
     /* Display active requested sockets */
     /* Message */
     message("DISPLAYING REQUESTED SOCKETS INFO");
-    display_client_req_info(clients,CLIENT_NO); 
+    display_client_req_info(&clients,CLIENT_NO); 
      
     
     /* create sockets for all active clients */ 
     /* Message */
     message("CREATING SOCKETS FOR CLIENTS");
-    if((active_clients=basic_socket_setup(sockfd, (struct addrinfo **)&clients))<0) {
-        close_fd(sockfd);
+    if((active_clients=basic_socket_setup(&sockfd, (struct addrinfo **)&clients))<0) {
+        close_fd(&sockfd);
         error_handle("Creating socket/Setting reuse of socket");
     }
 
@@ -77,8 +72,8 @@ int main() {
     /* Start sockets by binding and listening */
     /* Message */
     message("STARTING SOCKETS FOR SENDING/RECEIVING MESSAGES");
-    if(socket_start(sockfd, (struct addrinfo **)&clients)<0) {
-        close_fd(sockfd);
+    if(socket_start(&sockfd, (struct addrinfo **)&clients)<0) {
+        close_fd(&sockfd);
         error_handle("Binding Sockets/Listening on Socket");
     }
 
@@ -88,20 +83,16 @@ int main() {
     message("STARTING LISTENING SOCKETS");
 
    
-    /* loop that accepts a pre-determined number of sockets and stores the returned sockets after accepting into pfds for polling */
-    for(i=0;i<active_clients;i++) {
-        accept_sockets(sockfd[i],pfds,i);
-    }
-
     /* set socket to nonblocking */
-    fcntl(sockfd[0], F_SETFL, O_NONBLOCK);
+    fcntl(sockfd, F_SETFL, O_NONBLOCK);
 
     /* poll pre-determined number of sockets in pfds array */
     while(poll(pfds,active_clients,1000)!=-1 && !disconnect_flag) {
         buff[0] = '\0';
 
         /* accept socket otherwise continue */
-        accept_sockets(sockfd[0], pfds, active_clients++);
+        if(accept_sockets(sockfd, pfds, active_clients)==0)
+            active_clients++;
         
         /* loop through pfds array checking for sockets that have data in them */
         for(i=0;i<active_clients;i++) {
@@ -154,9 +145,7 @@ int main() {
     /* Free Memory allocated for struct addrinfo */
     /* Message */
     message("FREEING ADDRINFO STRUCTS CONTAINING SOCKET INFO");
-    for(i=0;i<active_clients;i++) {
-        freeaddrinfo(clients[i]);
-    }
+    freeaddrinfo(clients);
 
     /* Close descriptors in listening socket descriptor array */
     /* Message */
@@ -165,7 +154,7 @@ int main() {
     /* Close descriptors in socket descriptor array */
     /* Message */
     message("CLOSING SOCKET DESCRIPTORS");
-    close_fd(sockfd);
+    close_fd(&sockfd);
 
     return 0;
 }

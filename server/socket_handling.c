@@ -13,7 +13,7 @@
 /* function handles basic socket setups including:
  * creation of socket for active clients
  * setting socket option for reuse of socket
- * returns number of active clients
+ * returns number of active clients or 0
  */
 int basic_socket_setup(int *sockfd, struct addrinfo **clients) {
     
@@ -25,19 +25,26 @@ int basic_socket_setup(int *sockfd, struct addrinfo **clients) {
      * For loop that iterates through all active clients 
      * pointers of clients point to NULL if they are not pointing to an active client
      */
+
+    /*
     for(i=0; clients[i]!=NULL; i++) {
-        /* Create socket for Active Peers */
+        // Create socket for Active Peers
         if((sockfd[i] = socket(clients[0]->ai_family, clients[0]->ai_socktype, clients[0]->ai_protocol)) < 0) {
             return -1;
         }
 
-        /* Enable reuse of socket */
+        // Enable reuse of socket
         yes = 1;
         if(setsockopt(sockfd[i], SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) != 0) {
             return -1;
         }
     }
-    return i;
+    */
+
+    if((*sockfd = socket((*clients)->ai_family, (*clients)->ai_socktype, (*clients)->ai_protocol)) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -53,22 +60,34 @@ int socket_start(int *sockfd, struct addrinfo **clients) {
      * For loop that iterates through all active clients 
      * pointers of clients point to NULL if they are not pointing to an active client
      */
+    /*
     for(i=0; clients[i]!=NULL; i++) {
-        /* Bind requested sockets for active clients */
+        // Bind requested sockets for active clients
         if(bind(sockfd[i], clients[i]->ai_addr, clients[i]->ai_addrlen)!=0) {
             return -1;
         }
 
 
-        /* Listen on sockets that are to be connected to active clients */
+        // Listen on sockets that are to be connected to active clients
         if(listen(sockfd[i], MAX_CON)!=0) {
             return -1;
         }
     }
+    */
+
+    if(bind(*sockfd, (*clients)->ai_addr, (*clients)->ai_addrlen) != 0) {
+        return -1;
+    }
+
+    if(listen(*sockfd, MAX_CON)!=0) {
+        return -1;
+    }
 }
 
 
-/* function stores listening sockets into array after calling accept on client requested sockets */
+/* function stores listening sockets into array after calling accept on client requested sockets 
+ * returns 0 on success
+ * */
 int accept_sockets(int sockfd, struct pollfd *pfds, int index) {
     /* Declaration */
     int i;                                                              /* Iterator */

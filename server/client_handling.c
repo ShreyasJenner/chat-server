@@ -22,6 +22,7 @@ void display_client_req_info(struct addrinfo **clients, int size) {
     i = 0;
 
     /* Iterate thorugh array of pointers of struct addrinfo */
+    /*
     while(i<size && clients[i]!=NULL) {
         for(ad_it = clients[i]; ad_it != NULL; ad_it = ad_it->ai_next) {
             if(ad_it->ai_family == AF_INET) {
@@ -35,13 +36,24 @@ void display_client_req_info(struct addrinfo **clients, int size) {
         }
         i++;
     }
+    */
+        for(ad_it = *clients; ad_it != NULL; ad_it = ad_it->ai_next) {
+            if(ad_it->ai_family == AF_INET) {
+                struct sockaddr_in *ipv4 = (struct sockaddr_in *)ad_it->ai_addr;
+                struct in_addr *addr = &(ipv4->sin_addr);
+                in_port_t *port = &(ipv4->sin_port);
+
+                inet_ntop(ad_it->ai_family, addr, ipstring, sizeof(ipstring));
+                printf("%s:%d\n",ipstring,ntohs(*port));
+            }
+        }
 }
 
 
 /* Function reads list of client ip addresses and ports from a file and stores into a character array 
  * used by get_address_info function to get client addressing info
  */
-int read_client_list(char client_ip[CLIENT_NO][IP_WIDTH], char client_port[CLIENT_NO][PORT_WIDTH], int active_clients) {
+int read_client_list(char client_ip[CLIENT_NO][IP_WIDTH], char client_port[CLIENT_NO][PORT_WIDTH]) {
 
     /* variables */
     int i,j,flag, bytes_read;
@@ -77,10 +89,6 @@ int read_client_list(char client_ip[CLIENT_NO][IP_WIDTH], char client_port[CLIEN
         
         if(flag) {
             if(buff[0] == '\n') {
-
-                // update number of clients
-                active_clients++;
-
                 client_port[i][j] = '\0';
                 i++;
                 j = 0;
