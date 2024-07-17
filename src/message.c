@@ -10,7 +10,7 @@
 
 /* Function logs the current time into the file */
 void time_message() {
-    FILE *fp = fopen("logs/log.dump","a");
+    FILE *fp = fopen("../logs/log.dump","a");
     
     /* if opening file didnt fail */
     if(fp!=NULL) {
@@ -26,7 +26,7 @@ void time_message() {
 
 /* Function logs message with timestamp into log file*/
 void message(char *msg) {
-    FILE *fp = fopen("logs/log.dump","a");
+    FILE *fp = fopen("../logs/log.dump","a");
     
     /* if opening file didnt fail */
     if(fp!=NULL) {
