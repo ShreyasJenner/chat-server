@@ -1,4 +1,4 @@
 Chat Server Implementation using C
 
 To-Do:
-- Read file and sent it on entering file name
+- Use pthreads to read from stdin and read from socket simultaneously

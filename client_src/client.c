@@ -1,12 +1,13 @@
 /* Header Files */
-#include "header.h"
+#include "../src/header.h"
+#include <sys/socket.h>
 
 int main(int argc, char **argv) {
 
     /* variables */
     struct addrinfo server, *server_det;
     int sockfd, bytes_sent,i;
-    char msg[100], buff[100], ch;
+    char msg[100],ch;
 
 
     if(argc <= 2) {
@@ -34,22 +35,24 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    connect(sockfd, server_det->ai_addr, server_det->ai_addrlen);
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
     
-    i = 0;
-    while(read(0, &ch, 1)>0) {
-        
-        if(ch=='\n') {
-            msg[i++] = '\n';
-            msg[i++] = '\0';
-            i = 0;
-            printf("%d:%s\n",send(sockfd, msg, strlen(msg), 0),msg);
+    while(1) {
+        scanf("%[^\n]", msg);
+        getchar();
+        if(send(sockfd, msg, strlen(msg), 0)<0) {
+            perror("Sending data");
+            exit(1);
+        }
+
+        if(recv(sockfd, msg, sizeof(msg), 0)==0) {
+            break;
         } else {
-            msg[i++] = ch;
+            printf("%s\n",msg);
         }
     }
         
+    close(sockfd);
 
     return 0;
 }

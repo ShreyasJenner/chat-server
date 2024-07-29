@@ -1,3 +1,5 @@
 help/
 assets/
 Flow.md
+.cache/
+compile_commands.json

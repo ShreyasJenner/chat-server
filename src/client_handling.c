@@ -69,7 +69,9 @@ void get_host_port(char *client_port) {
     srand(time(NULL));
 
     /* copy random generated port value into client_port */
-    sprintf(client_port, "%d", rand()%(UPPER_PORT-LOWER_PORT+1)+LOWER_PORT);
+    //sprintf(client_port, "%d", rand()%(UPPER_PORT-LOWER_PORT+1)+LOWER_PORT);
+
+    strcpy(client_port,"1234");
 }
 
 
