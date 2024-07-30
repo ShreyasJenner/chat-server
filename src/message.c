@@ -1,5 +1,3 @@
-#include "message.h"
-
 /*
  * Program implements message function that helps trace program running state 
  * 
@@ -7,6 +5,8 @@
  * time_message() -> void
  * message(msg: char*) -> void
  */
+
+#include "../headers/message.h"
 
 /* Function logs the current time into the file */
 void time_message() {

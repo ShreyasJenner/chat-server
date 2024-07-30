@@ -1,6 +1,5 @@
 /* Header Files */
-#include "../src/header.h"
-#include <sys/socket.h>
+#include "../headers/header.h"
 
 int main(int argc, char **argv) {
 

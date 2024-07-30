@@ -1,9 +1,9 @@
 /* Header Files */
-#include "header.h"
-#include "client_handling.h"
-#include "error_handle.h"
-#include "socket_handling.h"
-#include "message.h"
+#include "../headers/header.h"
+#include "../headers/client_handling.h"
+#include "../headers/error_handle.h"
+#include "../headers/socket_handling.h"
+#include "../headers/message.h"
 
 
 int main() {
