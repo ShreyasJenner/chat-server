@@ -1,11 +1,34 @@
 /* Header Files */
 #include "../headers/header.h"
 
+void *read_stdin(void *sockfd) {
+    char msg[100];
+    int i;
+    
+    i = 0;
+    while(strcmp(msg, "stop")) {
+        msg[i++] = getchar();
+
+        if(msg[i-1]=='\n') {
+            msg[i] = '\0';
+            i = 0;
+        }
+
+        if(send(*((int *)sockfd), msg, strlen(msg), 0)<0) {
+            perror("Sending data");
+            exit(1);
+        }
+    }
+
+    return NULL;
+}
+
 int main(int argc, char **argv) {
 
     /* variables */
+    pthread_t thread;
     struct addrinfo server, *server_det;
-    int sockfd, bytes_sent,i;
+    int sockfd, bytes_sent,i, bytes_recvd;
     char msg[100],ch;
 
 
@@ -35,19 +58,16 @@ int main(int argc, char **argv) {
     }
 
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
+
+    // Create Thread
+    pthread_create(&thread, NULL, read_stdin, &sockfd);
     
     while(1) {
-        scanf("%[^\n]", msg);
-        getchar();
-        if(send(sockfd, msg, strlen(msg), 0)<0) {
-            perror("Sending data");
-            exit(1);
-        }
-
-        if(recv(sockfd, msg, sizeof(msg), 0)==0) {
+        if((bytes_recvd=recv(sockfd, msg, sizeof(msg), 0))==0) {
             break;
-        } else {
-            printf("%s\n",msg);
+        } else if(bytes_recvd>0) {
+            msg[bytes_recvd] = '\0';
+            printf("%s",msg);
         }
     }
         

@@ -107,7 +107,8 @@ void broadcast_msg(struct pollfd *pfds, char *buff, int active_clients, int curr
     /* Send message to all clients except curr one */
     for(j=0;j<active_clients;j++) {
         /* if disconnecting socket is not being pointed to by j */
-        if(j!=curr_client)
+        if(j!=curr_client) {
             send(pfds[j].fd, buff, strlen(buff), 0);
+        }
     }
 }
