@@ -128,11 +128,7 @@ int main() {
                 }
                 /* else if there is no error in reading socket */
                 else if(bytes_recv>0) {
-                    /* close string received with \n\0 */
-                    buff[bytes_recv] = '\n';
-                    buff[bytes_recv+1] = '\0';
-
-                    /* print on stdout without \n as \n has been manually appended */
+                    /* print on stdout without \n as \n has been appended on client side */
                     printf("%d[%d]:%s",pfds[i].fd,bytes_recv,buff);
 
                     /* store client details in variable client_name */ 
