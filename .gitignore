@@ -3,3 +3,4 @@ assets/
 Flow.md
 .cache/
 compile_commands.json
+logs/log.dump

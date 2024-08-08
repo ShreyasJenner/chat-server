@@ -3,7 +3,7 @@
 #include "../headers/client_handling.h"
 #include "../headers/error_handle.h"
 #include "../headers/socket_handling.h"
-#include "../headers/message.h"
+#include "../headers/log.h"
 
 
 int main() {
@@ -36,8 +36,8 @@ int main() {
 
     /* store  host_ip and host_port */
     /* Log time into file */
-    time_message();
-    message("READING CLIENT IP ADDRESS AND PORT");
+    time_log();
+    log_msg("READING CLIENT IP ADDRESS AND PORT");
     if(get_host_ip(host_ip)!=0) {
         error_handle("Getting host ip");
     }
@@ -49,8 +49,8 @@ int main() {
 
 
     /* Store the client information into structs */
-    /* Message */
-    message("STORING REQUESTED SOCKET INFORMATION");
+    /* Log */
+    log_msg("STORING REQUESTED SOCKET INFORMATION");
     if(get_address_info(&clients, host_ip, host_port)!=0) {
         error_handle("getting address info for socket");
     }
@@ -58,14 +58,14 @@ int main() {
     
 
     /* Display active requested sockets */
-    /* Message */
-    message("DISPLAYING REQUESTED SOCKETS INFO");
+    /* Log */
+    log_msg("DISPLAYING REQUESTED SOCKETS INFO");
     display_client_req_info(&clients,CLIENT_NO); 
      
     
     /* create sockets for all active clients */ 
-    /* Message */
-    message("CREATING SOCKETS FOR CLIENTS");
+    /* Log */
+    log_msg("CREATING SOCKETS FOR CLIENTS");
     if((active_clients=basic_socket_setup(&sockfd, (struct addrinfo **)&clients))<0) {
         close_fd(&sockfd);
         error_handle("Creating socket/Setting reuse of socket");
@@ -73,8 +73,8 @@ int main() {
 
     
     /* Start sockets by binding and listening */
-    /* Message */
-    message("STARTING SOCKETS FOR SENDING/RECEIVING MESSAGES");
+    /* Log */
+    log_msg("STARTING SOCKETS FOR SENDING/RECEIVING MESSAGES");
     if(socket_start(&sockfd, (struct addrinfo **)&clients)<0) {
         close_fd(&sockfd);
         error_handle("Binding Sockets/Listening on Socket");
@@ -82,8 +82,8 @@ int main() {
 
 
     /* Get sockets for listening to clients */
-    /* Message */
-    message("STARTING LISTENING SOCKETS\n");
+    /* Log */
+    log_msg("STARTING LISTENING SOCKETS\n");
 
     /* Create host socket; blocks until host connection to server socket */
     accept_sockets(sockfd, pfds, 0);
@@ -111,13 +111,13 @@ int main() {
                     if(i == 0 && pfds[i].fd != -1) {
                         disconnect_flag = 1;
 
-                        /* put server disconnect message into buff and log it */
+                        /* put server disconnect log into buff and log it */
                         sprintf(buff, "SERVER DISCONNECTED\n");
-                        message(buff);
+                        log_msg(buff);
                     } else {
-                        /* put client disconnect message into buff and log it */
+                        /* put client disconnect log into buff and log it */
                         sprintf(buff, "CLIENT %d DISCONNECTED\n",pfds[i].fd);
-                        message(buff);
+                        log_msg(buff);
                         
                         /* set corresponding fd to -1 so that disconnect msg isnt printed repeatedly */
                         pfds[i].fd = -1;
@@ -152,17 +152,17 @@ int main() {
 
     
     /* Free Memory allocated for struct addrinfo */
-    /* Message */
-    message("\nFREEING ADDRINFO STRUCTS CONTAINING SOCKET INFO");
+    /* Log */
+    log_msg("\nFREEING ADDRINFO STRUCTS CONTAINING SOCKET INFO");
     freeaddrinfo(clients);
 
     /* Close descriptors in listening socket descriptor array */
-    /* Message */
-    message("CLOSING LISTENING SOCKET DESCRIPTORS");
+    /* Log */
+    log_msg("CLOSING LISTENING SOCKET DESCRIPTORS");
     close_fd(listen_sockfd);
     /* Close descriptors in socket descriptor array */
-    /* Message */
-    message("CLOSING SOCKET DESCRIPTORS");
+    /* Log */
+    log_msg("CLOSING SOCKET DESCRIPTORS");
     close_fd(&sockfd);
 
     printf("Program Exiting\n");

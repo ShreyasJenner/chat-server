@@ -4,7 +4,7 @@ all:
 		src/client_handling.c \
 		src/error_handle.c \
 		src/socket_handling.c \
-		src/message.c
+		src/log.c
 
 	@gcc -o client \
 		client_src/client.c

@@ -1,15 +1,15 @@
 /*
- * Program implements message function that helps trace program running state 
+ * Program implements log function that helps trace program running state 
  * 
  * Functions:
- * time_message() -> void
- * message(msg: char*) -> void
+ * time_log() -> void
+ * log(msg: char*) -> void
  */
 
-#include "../headers/message.h"
+#include "../headers/log.h"
 
 /* Function logs the current time into the file */
-void time_message() {
+void time_log() {
     FILE *fp;
     fp = fopen("logs/log.dump","a");
     
@@ -28,13 +28,13 @@ void time_message() {
     }
 }
 
-/* Function logs message with timestamp into log file*/
-void message(char *msg) {
+/* Function logs log with timestamp into log file*/
+void log_msg(char *msg) {
     FILE *fp = fopen("logs/log.dump","a");
     
     /* if opening file didnt fail */
     if(fp!=NULL) {
-        /* append the message to the file */
+        /* append the log to the file */
         fputs(msg, fp);
         fputc('\n', fp);
         fclose(fp);
