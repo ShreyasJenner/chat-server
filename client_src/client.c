@@ -25,8 +25,11 @@ void *read_stdin(void *sockfd) {
             exit(1);
         }
     }
-
-    return NULL;
+    
+    // close socket
+    close(*(int *)sockfd);
+    // exit program as client has signalled stop
+    exit(1);
 }
 
 int main(int argc, char **argv) {
@@ -77,6 +80,7 @@ int main(int argc, char **argv) {
     // infinite loop to receive messages from socket 
     // thread handles sending messages to server
     while(1) {
+        // if server closes connection then break out of loop
         if((bytes_recvd=recv(sockfd, msg, sizeof(msg), 0))==0) {
             break;
         } else if(bytes_recvd>0) {
