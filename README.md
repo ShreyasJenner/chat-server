@@ -1,13 +1,18 @@
-Chat Server Implementation using C
+## Chat Server
 
-Demonstration:
-
-Broadcasting messages between clients and server
-
-![](data/example.webp)
+C++ implementation of a chat server that emulates an IRC 
 
 
-To-Do:
-- Use pthreads to read from stdin and read from socket simultaneously
-- private comms between two clients
-- registering of usernames with associated clients
+## Methodology
+
+- Server
+- Client
+- Channel
+- Connection
+
+A server establishes a connection with a client using a connection
+The client subscribes to a channel
+Messages sent are marked with the channel they are associated with
+Messages in a channel are sent to all members of a channel
+
+
