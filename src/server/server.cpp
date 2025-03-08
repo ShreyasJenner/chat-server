@@ -83,8 +83,9 @@ void Server::send_msg(std::string msg) {
 }
 
 // Function to receive a message from the server
-void Server::recv_msg() {
+std::string Server::recv_msg() {
   int len, err;
+  std::string msg;
 
   // receive message length
   err = recv(this->user_data[0].socket, &len, sizeof(len), 0);
@@ -99,5 +100,9 @@ void Server::recv_msg() {
     perror("Error receiving message");
   }
 
-  std::cout << "Msg: " << buff << '\n';
+  msg = buff;
+  return msg;
 }
+
+// Destructor to free all allocated data
+Server::~Server() { this->user_data.clear(); }

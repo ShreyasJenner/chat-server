@@ -39,7 +39,9 @@ public:
 
   void send_msg(std::string msg);
 
-  void recv_msg();
+  std::string recv_msg();
+
+  ~Server();
 };
 
 #endif // !SERVER_HPP

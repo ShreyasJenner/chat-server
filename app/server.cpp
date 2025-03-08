@@ -5,7 +5,7 @@ int main() {
   s->start_server();
   s->accept_conns();
 
-  s->recv_msg();
+  std::cout << s->recv_msg() << '\n';
 
   return 0;
 }
