@@ -10,20 +10,29 @@ extern "C" {
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 }
+
+#define MAX_CONN 1
 
 class Client {
 private:
-  int sendingSockfd, listeningSockfd;
+  int sendingSockfd, listeningSockfd, acceptSockfd;
   std::string ip_addr;
   std::string port;
 
 public:
+  Client(std::string ip_addr, std::string port);
+
+  void start_client();
+
   void connect_to(std::string ip_addr, std::string port);
 
   void send_msg(std::string msg);
 
-  void recv_msg();
+  std::string recv_msg();
+
+  ~Client();
 };
 
 #endif // !CLIENT_HPP

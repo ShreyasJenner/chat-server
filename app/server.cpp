@@ -5,7 +5,11 @@ int main() {
   s->start_server();
   s->accept_conns();
 
-  std::cout << s->recv_msg() << '\n';
+  auto ptr = s->get_user_data();
+
+  std::cout << s->recv_msg(ptr->begin()->listeningSocket) << '\n';
+
+  s->send_msg(ptr->begin()->sendingSocket, "Hello from server");
 
   return 0;
 }

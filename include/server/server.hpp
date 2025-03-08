@@ -10,6 +10,7 @@ extern "C" {
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 }
 
 #define MAX_CONN 10
@@ -18,7 +19,8 @@ class Users {
 public:
   std::string ip_addr;
   int port;
-  int socket;
+  int listeningSocket;
+  int sendingSocket;
 };
 
 class Server {
@@ -37,9 +39,11 @@ public:
 
   void accept_conns();
 
-  void send_msg(std::string msg);
+  void send_msg(int socket, std::string msg);
 
-  std::string recv_msg();
+  std::string recv_msg(int socket);
+
+  std::vector<Users> *get_user_data();
 
   ~Server();
 };
