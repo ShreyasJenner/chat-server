@@ -9,7 +9,7 @@ Server::Server(std::string ip_addr, std::string port) {
 // Function to start the server and listen on a port
 void Server::start_server() {
 
-  int err;
+  int err, reuse;
   struct addrinfo hints, *res;
 
   // load address structs
@@ -22,6 +22,7 @@ void Server::start_server() {
   err = getaddrinfo(this->ip_addr.c_str(), this->port.c_str(), &hints, &res);
   if (err != 0) {
     perror("Error filling address structs");
+    this->close_sockets();
     exit(1);
   }
 
@@ -29,13 +30,19 @@ void Server::start_server() {
   this->serverSocket = socket(AF_INET, SOCK_STREAM, 0);
   if (this->serverSocket < 0) {
     perror("Error creating listening socket");
+    this->close_sockets();
     exit(1);
   }
+
+  // allow reusing of socket address
+  reuse = 1;
+  setsockopt(this->serverSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
 
   // bind the socket to the given port
   err = bind(this->serverSocket, res->ai_addr, res->ai_addrlen);
   if (err != 0) {
     perror("Error binding socket to port");
+    this->close_sockets();
     exit(1);
   }
 
@@ -59,6 +66,7 @@ void Server::accept_conns() {
       accept(this->serverSocket, (struct sockaddr *)&other_addr, &addr_size);
   if (listenSock == -1) {
     perror("Error accepting connection to socket");
+    this->close_sockets();
     exit(1);
   }
 
@@ -75,6 +83,7 @@ void Server::accept_conns() {
   err = getaddrinfo(ip_addr.c_str(), port.c_str(), &hints, &res);
   if (err != 0) {
     perror("Error populating address struct");
+    this->close_sockets();
     exit(1);
   }
 
@@ -82,12 +91,14 @@ void Server::accept_conns() {
   sendSock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (sendSock == -1) {
     perror("Error creating socket");
+    this->close_sockets();
     exit(1);
   }
 
   err = connect(sendSock, res->ai_addr, res->ai_addrlen);
   if (err != 0) {
     perror("Error connecting to socket");
+    this->close_sockets();
     exit(1);
   }
 
@@ -122,6 +133,7 @@ std::string Server::recv_msg(int socket) {
   err = recv(socket, &len, sizeof(len), 0);
   if (err != sizeof(int)) {
     perror("Error receiving message length");
+    this->close_sockets();
   }
   char buff[len + 1];
 
@@ -129,6 +141,7 @@ std::string Server::recv_msg(int socket) {
   err = recv(socket, buff, len, 0);
   if (err != len) {
     perror("Error receiving message");
+    this->close_sockets();
   }
   buff[len] = '\0';
 
@@ -139,8 +152,22 @@ std::string Server::recv_msg(int socket) {
 // Function to return pointer to vector of Users
 std::vector<Users> *Server::get_user_data() { return &this->user_data; }
 
-// Destructor to free all allocated data
-Server::~Server() {
+// Function to close sockets safely
+void Server::close_sockets() {
+
+  // close server socket
   shutdown(this->serverSocket, SHUT_RDWR);
   close(this->serverSocket);
+
+  // close user socket
+  for (auto user : this->user_data) {
+    shutdown(user.sendingSocket, SHUT_RDWR);
+    close(user.sendingSocket);
+
+    shutdown(user.listeningSocket, SHUT_RDWR);
+    close(user.listeningSocket);
+  }
 }
+
+// Destructor to free all allocated data
+Server::~Server() { this->close_sockets(); }

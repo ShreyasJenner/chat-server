@@ -45,6 +45,8 @@ public:
 
   std::vector<Users> *get_user_data();
 
+  void close_sockets();
+
   ~Server();
 };
 

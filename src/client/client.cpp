@@ -20,29 +20,32 @@ void Client::start_client() {
   err = getaddrinfo(this->ip_addr.c_str(), this->port.c_str(), &hints, &res);
   if (err != 0) {
     perror("Error filling address structs");
+    this->close_sockets();
     exit(1);
   }
 
   // create a listening socket
-  this->acceptSockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (this->acceptSockfd < 0) {
+  this->clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+  if (this->clientSocket < 0) {
     perror("Error creating listening socket");
+    this->close_sockets();
     exit(1);
   }
 
   // allow reusing of socket address
   reuse = 1;
-  setsockopt(this->acceptSockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
+  setsockopt(this->clientSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
 
   // bind the socket to the given port
-  err = bind(this->acceptSockfd, res->ai_addr, res->ai_addrlen);
+  err = bind(this->clientSocket, res->ai_addr, res->ai_addrlen);
   if (err != 0) {
     perror("Error binding socket to port");
+    this->close_sockets();
     exit(1);
   }
 
   // start listening on the socket
-  listen(this->acceptSockfd, MAX_CONN);
+  listen(this->clientSocket, MAX_CONN);
 }
 
 // Function to connect to a system with the given ip address over the given port
@@ -62,6 +65,7 @@ void Client::connect_to(std::string ip_addr, std::string port) {
   err = getaddrinfo(ip_addr.c_str(), port.c_str(), &hints, &res);
   if (err != 0) {
     perror("Error populating address struct");
+    this->close_sockets();
     exit(1);
   }
 
@@ -70,6 +74,7 @@ void Client::connect_to(std::string ip_addr, std::string port) {
       socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (this->sendingSockfd == -1) {
     perror("Error creating socket");
+    this->close_sockets();
     exit(1);
   }
 
@@ -82,6 +87,7 @@ void Client::connect_to(std::string ip_addr, std::string port) {
   err = connect(sendingSockfd, res->ai_addr, res->ai_addrlen);
   if (err != 0) {
     perror("Error connecting to socket");
+    this->close_sockets();
     exit(1);
   }
 
@@ -92,9 +98,10 @@ void Client::connect_to(std::string ip_addr, std::string port) {
   // accept a connection from the server
   addr_size = sizeof other_addr;
   this->listeningSockfd =
-      accept(this->acceptSockfd, (struct sockaddr *)&other_addr, &addr_size);
+      accept(this->clientSocket, (struct sockaddr *)&other_addr, &addr_size);
   if (this->listeningSockfd == -1) {
     perror("Error accepting connection to socket");
+    this->close_sockets();
     exit(1);
   }
 
@@ -125,6 +132,7 @@ std::string Client::recv_msg() {
   if (err != sizeof(int)) {
     std::cout << err << " " << len << '\n';
     perror("Error receiving message length");
+    this->close_sockets();
     exit(1);
   }
   char buff[len + 1];
@@ -133,6 +141,7 @@ std::string Client::recv_msg() {
   err = recv(this->listeningSockfd, buff, len, 0);
   if (err != len) {
     perror("Error receiving message");
+    this->close_sockets();
     exit(1);
   }
   buff[len] = '\0';
@@ -141,15 +150,18 @@ std::string Client::recv_msg() {
   return msg;
 }
 
-// Destructor to free all allocated data
-Client::~Client() {
+// Function to close sockets safely
+void Client::close_sockets() {
   // shutdown all sockets
-  shutdown(this->acceptSockfd, SHUT_RDWR);
+  shutdown(this->clientSocket, SHUT_RDWR);
   shutdown(this->sendingSockfd, SHUT_RDWR);
   shutdown(this->listeningSockfd, SHUT_RDWR);
 
   // close the sockets
-  close(this->acceptSockfd);
+  close(this->clientSocket);
   close(this->sendingSockfd);
   close(this->listeningSockfd);
 }
+
+// Destructor to free all allocated data
+Client::~Client() { this->close_sockets(); }

@@ -17,7 +17,8 @@ extern "C" {
 
 class Client {
 private:
-  int sendingSockfd, listeningSockfd, acceptSockfd;
+  int sendingSockfd, listeningSockfd;
+  int clientSocket;
   std::string ip_addr;
   std::string port;
 
@@ -31,6 +32,8 @@ public:
   void send_msg(std::string msg);
 
   std::string recv_msg();
+
+  void close_sockets();
 
   ~Client();
 };
