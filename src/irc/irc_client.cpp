@@ -6,6 +6,7 @@ IRC_Client::IRC_Client(std::string username, std::string ip_addr,
 
   // initialize the class variables
   this->username = username;
+  this->channels.push_back("common");
 
   // create the node client and store the details
   this->client = new Node(CLIENT, ip_addr, port);
@@ -16,7 +17,8 @@ void IRC_Client::init_connect(std::string ip_addr, std::string port) {
   // connect to server with given ip address and port and store socket obtained
   this->commSock = this->client->connect_to(ip_addr, port);
 
-  // send username, ip address and port to server
+  // send channel, username, ip address and port to server
+  this->client->send_msg(this->commSock, "common");
   this->client->send_msg(this->commSock, this->username);
   this->client->send_msg(this->commSock, this->client->get_ip_addr());
   this->client->send_msg(this->commSock, this->client->get_port());
@@ -28,7 +30,12 @@ void IRC_Client::handle_send() {
 
   // send messages as long as IRC client is running
   while (this->run) {
-    std::cin >> msg;
+    // take msg from stdin
+    std::getline(std::cin, msg);
+
+    // send the channel, username, and message
+    this->client->send_msg(this->commSock, *this->channels.begin());
+    this->client->send_msg(this->commSock, this->username);
     this->client->send_msg(this->commSock, msg);
     if (msg == "STOP") {
       this->run = false;
@@ -71,11 +78,9 @@ void IRC_Client::run_IRC_Client(std::string ip_addr, std::string port) {
 IRC_Client::~IRC_Client() {
   std::cout << "Closing IRC Client\n";
 
-  // close the node socket and remove the node
-  this->client->close_sockets();
-  delete this->client;
-
   // shutdown and close the communication socket
-  shutdown(this->commSock, SHUT_RDWR);
-  close(this->commSock);
+  this->client->close_sockets(this->commSock);
+
+  // remove the node
+  delete this->client;
 }

@@ -43,6 +43,8 @@ public:
 
   std::string recv_msg(int socket);
 
-  void close_sockets();
+  void close_sockets(int sock);
+
+  ~Node();
 };
 #endif // !NODE_HPP

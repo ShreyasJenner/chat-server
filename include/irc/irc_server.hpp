@@ -15,10 +15,12 @@ extern "C" {
 
 class Users {
 public:
+  std::vector<std::string> channels;
   std::string username;
   std::string ip_addr;
   std::string port;
   int commSock;
+  int pollIdx;
 };
 
 class IRC_Server {
@@ -38,9 +40,11 @@ public:
 
   void handle_connections();
 
-  void send_msg_handling();
-
   void handle_recv();
+
+  void handle_send();
+
+  void handle_client_exit(int index);
 
   void run_IRC_Server();
 
