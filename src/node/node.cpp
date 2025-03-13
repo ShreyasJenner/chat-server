@@ -53,28 +53,45 @@ void Node::start_node() {
   }
 
   // start listening on the socket
-  listen(this->listenSock,
-         (type == SERVER) ? SERVER_MAX_CONN : CLIENT_MAX_CONN);
-}
-
-// Function to accept connections on listening socket and return a socket for
-// communication
-int Node::accept_conns() {
-  int commSock, reuse;
-
-  // accept connection from client
-  commSock = accept(this->listenSock, nullptr, nullptr);
-  if (commSock == -1) {
-    perror("Error accepting connection to socket");
+  err = listen(this->listenSock,
+               (type == SERVER) ? SERVER_MAX_CONN : CLIENT_MAX_CONN);
+  if (err != 0) {
+    perror("Error listening on socket");
     this->close_sockets(this->listenSock);
     exit(1);
   }
 
-  // allow reusing of socket
-  reuse = 1;
-  setsockopt(commSock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
+  // add listening socket to poll struct and set it
+  this->listenPoll.fd = this->listenSock;
+  this->listenPoll.events = POLLIN;
+}
 
-  return commSock;
+// Function to accept connections on listening socket and return a socket for
+// communication
+// Polls the listening socket and returns the socket number if a connection has
+// been accepted
+// else returns -1
+int Node::accept_conns() {
+  int commSock, reuse;
+
+  // poll listening socket
+  if (poll(&this->listenPoll, 1, 2000) > 0) {
+    // accept connection from client
+    commSock = accept(this->listenSock, nullptr, nullptr);
+    if (commSock == -1) {
+      perror("Error accepting connection to socket");
+      this->close_sockets(this->listenSock);
+      exit(1);
+    }
+
+    // allow reusing of socket
+    reuse = 1;
+    setsockopt(commSock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
+
+    return commSock;
+  }
+
+  return -1;
 }
 
 // Function to connect to a system with the given ip address over the given port

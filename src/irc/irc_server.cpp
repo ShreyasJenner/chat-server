@@ -26,27 +26,28 @@ void IRC_Server::handle_connections() {
   // accept connections only if connections are available
   while (this->run && this->pfd_vec.size() < SERVER_MAX_CONN) {
 
-    // accept a connection to the server and receive the socket
-    sockfd = this->server->accept_conns();
+    // accept a connection to the server and receive the socket if -1 is not
+    // returned
+    if ((sockfd = this->server->accept_conns()) != -1) {
+      // create a Users object, populate it, and store it in the vector
+      Users u;
 
-    // create a Users object, populate it, and store it in the vector
-    Users u;
+      // receive the client details and store it in the user object
+      u.channels.push_back(this->server->recv_msg(sockfd));
+      u.username = this->server->recv_msg(sockfd);
+      u.ip_addr = this->server->recv_msg(sockfd);
+      u.port = this->server->recv_msg(sockfd);
+      u.commSock = sockfd;
+      this->user_data.push_back(u);
 
-    // receive the client details and store it in the user object
-    u.channels.push_back(this->server->recv_msg(sockfd));
-    u.username = this->server->recv_msg(sockfd);
-    u.ip_addr = this->server->recv_msg(sockfd);
-    u.port = this->server->recv_msg(sockfd);
-    u.commSock = sockfd;
-    this->user_data.push_back(u);
+      // Add the user socket to the polling array
+      pfd.fd = sockfd;
+      pfd.events = POLLIN;
+      this->pfd_vec.push_back(pfd);
 
-    // Add the user socket to the polling array
-    pfd.fd = sockfd;
-    pfd.events = POLLIN;
-    this->pfd_vec.push_back(pfd);
-
-    // pointer points to the struct in the poll array
-    u.poll_ptr = &this->pfd_vec[this->pfd_vec.size()];
+      // pointer points to the struct in the poll array
+      u.poll_ptr = &this->pfd_vec[this->pfd_vec.size()];
+    }
   }
 }
 
@@ -87,6 +88,26 @@ void IRC_Server::handle_recv() {
   }
 }
 
+// Function to handle sending of messages to clients
+void IRC_Server::handle_send() {
+  std::string msg;
+
+  // run function while the server is up
+  while (this->run) {
+    std::getline(std::cin, msg);
+
+    // stop server and close all pending connections to client
+    if (msg == "STOP") {
+      this->run = false;
+    }
+
+    // iterate through users and send message
+    for (auto user : this->user_data) {
+      this->server->send_msg(user.commSock, msg);
+    }
+  }
+}
+
 // Function to handle when client sends STOP msg
 void IRC_Server::handle_client_exit(int index) {
   std::cout << this->user_data[index].username << " ending communication\n";
@@ -100,21 +121,6 @@ void IRC_Server::handle_client_exit(int index) {
 
   // erase the corresponding struct int the poll struct
   this->pfd_vec.erase(this->pfd_vec.begin() + index);
-}
-
-// Function to handle sending of messages to clients
-void IRC_Server::handle_send() {
-  std::string msg;
-
-  // run function while the server is up
-  while (this->run) {
-    std::cin >> msg;
-
-    // iterate through users and send message
-    for (auto user : this->user_data) {
-      this->server->send_msg(user.commSock, msg);
-    }
-  }
 }
 
 // Function to run the irc server
@@ -142,9 +148,7 @@ IRC_Server::~IRC_Server() {
 
   // shutdown and close the communication sockets
   for (auto user : this->user_data) {
-    if (user.commSock != -1) {
-      this->server->close_sockets(user.commSock);
-    }
+    this->server->close_sockets(user.commSock);
   }
 
   // remove the node
