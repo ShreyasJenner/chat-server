@@ -1,5 +1,2 @@
-help/
-assets/
-.cache/
-compile_commands.json
-logs/log.dump
+compile_flags.txt
+bin/*
