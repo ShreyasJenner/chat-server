@@ -1,2 +1,2 @@
-compile_flags.txt
-bin/*
+bin/
+obj/
