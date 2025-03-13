@@ -7,6 +7,7 @@
 extern "C" {
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -22,6 +23,8 @@ class Node {
 private:
   int listenSock;
   NodeType type;
+
+  struct pollfd listenPoll;
 
   std::string ip_addr;
   std::string port;
@@ -43,6 +46,8 @@ public:
 
   std::string recv_msg(int socket);
 
-  void close_sockets();
+  void close_sockets(int sock);
+
+  ~Node();
 };
 #endif // !NODE_HPP

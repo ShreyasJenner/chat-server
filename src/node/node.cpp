@@ -28,7 +28,7 @@ void Node::start_node() {
   err = getaddrinfo(this->ip_addr.c_str(), this->port.c_str(), &hints, &res);
   if (err != 0) {
     perror("Error filling address structs");
-    this->close_sockets();
+    this->close_sockets(this->listenSock);
     exit(1);
   }
 
@@ -36,7 +36,7 @@ void Node::start_node() {
   this->listenSock = socket(AF_INET, SOCK_STREAM, 0);
   if (this->listenSock < 0) {
     perror("Error creating listening socket");
-    this->close_sockets();
+    this->close_sockets(this->listenSock);
     exit(1);
   }
 
@@ -48,33 +48,50 @@ void Node::start_node() {
   err = bind(this->listenSock, res->ai_addr, res->ai_addrlen);
   if (err != 0) {
     perror("Error binding socket to port");
-    this->close_sockets();
+    this->close_sockets(this->listenSock);
     exit(1);
   }
 
   // start listening on the socket
-  listen(this->listenSock,
-         (type == SERVER) ? SERVER_MAX_CONN : CLIENT_MAX_CONN);
+  err = listen(this->listenSock,
+               (type == SERVER) ? SERVER_MAX_CONN : CLIENT_MAX_CONN);
+  if (err != 0) {
+    perror("Error listening on socket");
+    this->close_sockets(this->listenSock);
+    exit(1);
+  }
+
+  // add listening socket to poll struct and set it
+  this->listenPoll.fd = this->listenSock;
+  this->listenPoll.events = POLLIN;
 }
 
 // Function to accept connections on listening socket and return a socket for
 // communication
+// Polls the listening socket and returns the socket number if a connection has
+// been accepted
+// else returns -1
 int Node::accept_conns() {
   int commSock, reuse;
 
-  // accept connection from client
-  commSock = accept(this->listenSock, nullptr, nullptr);
-  if (commSock == -1) {
-    perror("Error accepting connection to socket");
-    this->close_sockets();
-    exit(1);
+  // poll listening socket
+  if (poll(&this->listenPoll, 1, 2000) > 0) {
+    // accept connection from client
+    commSock = accept(this->listenSock, nullptr, nullptr);
+    if (commSock == -1) {
+      perror("Error accepting connection to socket");
+      this->close_sockets(this->listenSock);
+      exit(1);
+    }
+
+    // allow reusing of socket
+    reuse = 1;
+    setsockopt(commSock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
+
+    return commSock;
   }
 
-  // allow reusing of socket
-  reuse = 1;
-  setsockopt(commSock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
-
-  return commSock;
+  return -1;
 }
 
 // Function to connect to a system with the given ip address over the given port
@@ -93,7 +110,7 @@ int Node::connect_to(std::string ip_addr, std::string port) {
   err = getaddrinfo(ip_addr.c_str(), port.c_str(), &hints, &res);
   if (err != 0) {
     perror("Error populating address struct");
-    this->close_sockets();
+    this->close_sockets(this->listenSock);
     exit(1);
   }
 
@@ -101,7 +118,7 @@ int Node::connect_to(std::string ip_addr, std::string port) {
   commSock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (commSock == -1) {
     perror("Error creating socket");
-    this->close_sockets();
+    this->close_sockets(this->listenSock);
     exit(1);
   }
 
@@ -113,7 +130,7 @@ int Node::connect_to(std::string ip_addr, std::string port) {
   err = connect(commSock, res->ai_addr, res->ai_addrlen);
   if (err != 0) {
     perror("Error connecting to socket");
-    this->close_sockets();
+    this->close_sockets(this->listenSock);
     exit(1);
   }
 
@@ -139,7 +156,7 @@ std::string Node::recv_msg(int socket) {
   err = recv(socket, &len, sizeof(len), 0);
   if (err != sizeof(int)) {
     perror("Error receiving message length");
-    this->close_sockets();
+    this->close_sockets(this->listenSock);
   }
   char buff[len + 1];
 
@@ -147,7 +164,7 @@ std::string Node::recv_msg(int socket) {
   err = recv(socket, buff, len, 0);
   if (err != len) {
     perror("Error receiving message");
-    this->close_sockets();
+    this->close_sockets(this->listenSock);
   }
   buff[len] = '\0';
 
@@ -156,7 +173,10 @@ std::string Node::recv_msg(int socket) {
 }
 
 // Function to close the sockets safely
-void Node::close_sockets() {
-  shutdown(this->listenSock, SHUT_RDWR);
-  close(this->listenSock);
+void Node::close_sockets(int sock) {
+  shutdown(sock, SHUT_RDWR);
+  close(sock);
 }
+
+// Destructor for node class
+Node::~Node() { this->close_sockets(this->listenSock); }
