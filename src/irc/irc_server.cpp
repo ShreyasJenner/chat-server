@@ -1,17 +1,9 @@
 #include "irc/irc_server.hpp"
 
 // Constructor for IRC Server class
-// NOTE: temporary ip address and port used for server node
 IRC_Server::IRC_Server(std::string ip_addr, std::string port) {
   // initalize the bookeeping variables
   this->run = true;
-  this->current_conn_count = 0;
-
-  // set all the fds in the polling struct array to negative 1
-  int i;
-  for (i = 0; i < SERVER_MAX_CONN; i++) {
-    this->pfds[i].fd = -1;
-  }
 
   // create and start server
   this->server = new Node(SERVER, ip_addr, port);
@@ -27,11 +19,12 @@ std::vector<Users> *IRC_Server::get_user_data() { return &this->user_data; }
 // Function to handle accepting of connections to server
 void IRC_Server::handle_connections() {
   int sockfd;
+  struct pollfd pfd;
   std::string ip_addr, port, username;
 
   // accept connections as long as server is running
   // accept connections only if connections are available
-  while (this->run && this->current_conn_count < SERVER_MAX_CONN) {
+  while (this->run && this->pfd_vec.size() < SERVER_MAX_CONN) {
 
     // accept a connection to the server and receive the socket
     sockfd = this->server->accept_conns();
@@ -45,61 +38,58 @@ void IRC_Server::handle_connections() {
     u.ip_addr = this->server->recv_msg(sockfd);
     u.port = this->server->recv_msg(sockfd);
     u.commSock = sockfd;
-    u.pollIdx = this->current_conn_count;
     this->user_data.push_back(u);
 
     // Add the user socket to the polling array
-    this->pfds[this->current_conn_count].fd = sockfd;
-    this->pfds[this->current_conn_count].events = POLLIN;
+    pfd.fd = sockfd;
+    pfd.events = POLLIN;
+    this->pfd_vec.push_back(pfd);
 
-    // increment the count of user connections
-    this->current_conn_count++;
+    // pointer points to the struct in the poll array
+    u.poll_ptr = &this->pfd_vec[this->pfd_vec.size()];
   }
 }
 
 // Function to handle receiving of messages for all sockets
 void IRC_Server::handle_recv() {
-  int num_events, i;
+  int num_events;
   std::string msg, channel, username;
 
   // infinite loop that runs while server has not shut down
   while (this->run) {
     // poll the sockets every 1 second
-    num_events = poll(this->pfds, this->current_conn_count, 2000);
+    num_events =
+        poll((struct pollfd *)&this->pfd_vec[0], this->pfd_vec.size(), 2000);
 
-    // iterate through the array handling all polling events
-    i = 0;
-    while (num_events > 0 && i < SERVER_MAX_CONN) {
-      // if the socket has data that can be read, read the data
-      if (this->pfds[i].revents & POLLIN) {
+    // iterate through vector if message has been sent
+    if (num_events > 0) {
+      for (auto polled = this->pfd_vec.begin(); polled < this->pfd_vec.end();
+           polled++) {
+        if (polled->revents & POLLIN) {
+          // receive the client messages
+          channel = this->server->recv_msg(polled->fd);
+          username = this->server->recv_msg(polled->fd);
+          msg = this->server->recv_msg(polled->fd);
 
-        // receive the client messages
-        channel = this->server->recv_msg(this->pfds[i].fd);
-        username = this->server->recv_msg(this->pfds[i].fd);
-        msg = this->server->recv_msg(this->pfds[i].fd);
+          // NOTE: temp code that prints the received data
+          std::cout << "Channel : " << channel << '\n';
+          std::cout << "Username: " << username << '\n';
+          std::cout << "Message: " << msg << '\n';
 
-        // check if the message is a stop sign, if it is, then close the socket
-        if (msg == "STOP") {
-          this->handle_client_exit(i);
+          // check if the message is a stop sign, if it is, then close the
+          // socket
+          if (msg == "STOP") {
+            this->handle_client_exit(polled - this->pfd_vec.begin());
+          }
         }
-
-        // NOTE: temp code that prints the received data
-        std::cout << "Channel : " << channel << '\n';
-        std::cout << "Username: " << username << '\n';
-        std::cout << "Message: " << msg << '\n';
       }
-
-      // increment i to check the next socket
-      i++;
-      num_events--;
     }
   }
 }
 
 // Function to handle when client sends STOP msg
 void IRC_Server::handle_client_exit(int index) {
-  std::cout << "Client " << this->user_data[index].username
-            << " ending communication\n";
+  std::cout << this->user_data[index].username << " ending communication\n";
 
   // send an acknowledging message to the client
   this->server->send_msg(this->user_data[index].commSock, "STOP");
@@ -108,8 +98,8 @@ void IRC_Server::handle_client_exit(int index) {
   this->server->close_sockets(this->user_data[index].commSock);
   this->user_data.erase(this->user_data.begin() + index);
 
-  // set the value in the poll struct to 0
-  this->pfds[index].fd = -1;
+  // erase the corresponding struct int the poll struct
+  this->pfd_vec.erase(this->pfd_vec.begin() + index);
 }
 
 // Function to handle sending of messages to clients

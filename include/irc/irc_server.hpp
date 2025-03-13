@@ -20,18 +20,17 @@ public:
   std::string ip_addr;
   std::string port;
   int commSock;
-  int pollIdx;
+  struct pollfd *poll_ptr;
 };
 
 class IRC_Server {
 private:
-  int current_conn_count;
   bool run;
 
   Node *server;
 
   std::vector<Users> user_data;
-  struct pollfd pfds[SERVER_MAX_CONN];
+  std::vector<struct pollfd> pfd_vec;
 
 public:
   IRC_Server(std::string ip_addr, std::string port);
