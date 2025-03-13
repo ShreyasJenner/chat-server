@@ -81,7 +81,7 @@ int Node::accept_conns() {
     if (commSock == -1) {
       perror("Error accepting connection to socket");
       this->close_sockets(this->listenSock);
-      exit(1);
+      return -1;
     }
 
     // allow reusing of socket
@@ -111,7 +111,7 @@ int Node::connect_to(std::string ip_addr, std::string port) {
   if (err != 0) {
     perror("Error populating address struct");
     this->close_sockets(this->listenSock);
-    exit(1);
+    return -1;
   }
 
   // make a socket
@@ -119,7 +119,7 @@ int Node::connect_to(std::string ip_addr, std::string port) {
   if (commSock == -1) {
     perror("Error creating socket");
     this->close_sockets(this->listenSock);
-    exit(1);
+    return -1;
   }
 
   // allow reusing of socket
@@ -131,7 +131,7 @@ int Node::connect_to(std::string ip_addr, std::string port) {
   if (err != 0) {
     perror("Error connecting to socket");
     this->close_sockets(this->listenSock);
-    exit(1);
+    return -1;
   }
 
   return commSock;
